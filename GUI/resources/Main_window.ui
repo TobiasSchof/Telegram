@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>805</width>
+    <height>499</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="2">
+     <layout class="QGridLayout" name="Main_layout" rowstretch="0,0,10,0,5,0">
+      <property name="leftMargin">
+       <number>10</number>
+      </property>
+      <property name="topMargin">
+       <number>5</number>
+      </property>
+      <property name="rightMargin">
+       <number>10</number>
+      </property>
+      <property name="bottomMargin">
+       <number>5</number>
+      </property>
+      <item row="1" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="msg_info_layout" stretch="0,10,5,10,5,10,0">
+        <item>
+         <widget class="QToolButton" name="next_msg_btn">
+          <property name="text">
+           <string>&lt;</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalspacer1_msginfo">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="chnl_lbl">
+          <property name="text">
+           <string>Telegram channel:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalspacer2_msginfo">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="msg_ids_lbl">
+          <property name="text">
+           <string>Telegram (text) message ID:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalspacer3_msginfo">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QToolButton" name="prev_msg_btn">
+          <property name="text">
+           <string>&gt;</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <layout class="QGridLayout" name="tags_layout">
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="checkBox">
+          <property name="text">
+           <string>tag2</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QCheckBox" name="checkBox_2">
+          <property name="text">
+           <string>tag1</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QCheckBox" name="checkBox_3">
+          <property name="text">
+           <string>tag3</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QCheckBox" name="checkBox_4">
+          <property name="text">
+           <string>tag4</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QCheckBox" name="checkBox_5">
+          <property name="text">
+           <string>tag5</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QCheckBox" name="checkBox_6">
+          <property name="text">
+           <string>tag6</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="trans_msg">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="sizeIncrement">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	border-style: solid;
+	border-color: black;
+	border-width: 1px;
+}</string>
+        </property>
+        <property name="text">
+         <string>No translation availble</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+        </property>
+        <property name="margin">
+         <number>10</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="trans_lbl">
+        <property name="text">
+         <string>Google Translate</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="orig_lbl">
+        <property name="text">
+         <string>Original</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="orig_msg">
+        <property name="minimumSize">
+         <size>
+          <width>300</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	border-style: solid;
+	border-color: black;
+	border-width: 1px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Привет Мир!</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+        </property>
+        <property name="margin">
+         <number>10</number>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2">
+       <widget class="QPlainTextEdit" name="comment_box">
+        <property name="placeholderText">
+         <string>comments</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="msg_lbl">
+        <property name="text">
+         <string>Message</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" rowspan="6">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,10">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Media</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="media_info_layout">
+          <item>
+           <widget class="QToolButton" name="next_media_btn">
+            <property name="text">
+             <string>&lt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>message ID:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="prev_media_btn">
+            <property name="text">
+             <string>&gt;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QWidget" name="media_box" native="true"/>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>805</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+    <addaction name="actionChannels_3"/>
+    <addaction name="actionTags_3"/>
+   </widget>
+   <addaction name="menuSettings"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionTags">
+   <property name="text">
+    <string>Tags</string>
+   </property>
+  </action>
+  <action name="actionChannels">
+   <property name="text">
+    <string>Channels</string>
+   </property>
+  </action>
+  <action name="actionWorking_Directory">
+   <property name="text">
+    <string>Working Directory</string>
+   </property>
+  </action>
+  <action name="actiontest">
+   <property name="text">
+    <string>test</string>
+   </property>
+  </action>
+  <action name="actiontest_2">
+   <property name="text">
+    <string>test</string>
+   </property>
+  </action>
+  <action name="actionChannels_3">
+   <property name="text">
+    <string>Channels</string>
+   </property>
+  </action>
+  <action name="actionTags_3">
+   <property name="text">
+    <string>Tags</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
