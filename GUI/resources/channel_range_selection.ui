@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>443</width>
     <height>300</height>
    </rect>
   </property>
@@ -14,17 +14,10 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0" colspan="2">
+   <item row="2" column="0" colspan="2">
     <widget class="QLineEdit" name="chnl_name">
      <property name="placeholderText">
       <string>t.me/example</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="from_lbl">
-     <property name="text">
-      <string>From:</string>
      </property>
     </widget>
    </item>
@@ -41,7 +34,54 @@
      </property>
     </spacer>
    </item>
-   <item row="4" column="0" colspan="2">
+   <item row="3" column="1">
+    <widget class="QLabel" name="to_lbl">
+     <property name="styleSheet">
+      <string notr="true">QFrame{
+	border-style: none;
+}</string>
+     </property>
+     <property name="text">
+      <string>To:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="from_lbl">
+     <property name="styleSheet">
+      <string notr="true">QFrame{
+	border-style: none;
+}</string>
+     </property>
+     <property name="text">
+      <string>From:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="1">
+    <widget class="QDateTimeEdit" name="end_date">
+     <property name="focusPolicy">
+      <enum>Qt::StrongFocus</enum>
+     </property>
+     <property name="readOnly">
+      <bool>false</bool>
+     </property>
+     <property name="buttonSymbols">
+      <enum>QAbstractSpinBox::UpDownArrows</enum>
+     </property>
+     <property name="time">
+      <time>
+       <hour>23</hour>
+       <minute>59</minute>
+       <second>59</second>
+      </time>
+     </property>
+     <property name="calendarPopup">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="0" colspan="2">
     <spacer name="bottom_v_spacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -54,31 +94,23 @@
      </property>
     </spacer>
    </item>
-   <item row="3" column="0">
+   <item row="4" column="0">
     <widget class="QDateTimeEdit" name="start_date">
+     <property name="focusPolicy">
+      <enum>Qt::StrongFocus</enum>
+     </property>
+     <property name="readOnly">
+      <bool>false</bool>
+     </property>
      <property name="calendarPopup">
       <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="QLabel" name="to_lbl">
+   <item row="3" column="2">
+    <widget class="QToolButton" name="rmv">
      <property name="text">
-      <string>To:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QDateTimeEdit" name="end_date">
-     <property name="time">
-      <time>
-       <hour>23</hour>
-       <minute>59</minute>
-       <second>59</second>
-      </time>
-     </property>
-     <property name="calendarPopup">
-      <bool>true</bool>
+      <string>Remove</string>
      </property>
     </widget>
    </item>

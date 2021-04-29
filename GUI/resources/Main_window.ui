@@ -281,24 +281,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>805</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuSettings">
-    <property name="title">
-     <string>Settings</string>
-    </property>
-    <addaction name="actionChannels_3"/>
-    <addaction name="actionTags_3"/>
-   </widget>
-   <addaction name="menuSettings"/>
-  </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionTags">
    <property name="text">
@@ -331,6 +313,16 @@
    </property>
   </action>
   <action name="actionTags_3">
+   <property name="text">
+    <string>Tags</string>
+   </property>
+  </action>
+  <action name="actionChannels_2">
+   <property name="text">
+    <string>Channels</string>
+   </property>
+  </action>
+  <action name="actionTags_2">
    <property name="text">
     <string>Tags</string>
    </property>
