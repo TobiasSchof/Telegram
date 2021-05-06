@@ -8,3 +8,6 @@
 .vscode/*
 
 scraper.session
+scraper.session-journal
+
+*.pyc

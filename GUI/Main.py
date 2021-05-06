@@ -438,14 +438,16 @@ class Main(QMainWindow):
             self.scraper.prev()
             self.scraper.next()
             self.prev_msg_btn.setEnabled(True)
-        except EndRange:
+        except EndRange as e:
+            print(e)
             self.prev_msg_btn.setEnabled(False)
 
         try:
             self.scraper.next()
             self.scraper.prev()
             self.next_msg_btn.setEnabled(True)
-        except EndRange:
+        except EndRange as e:
+            raise e
             self.next_msg_btn.setEnabled(False)
 
         # reset style sheet to get rid of any errors previously indicated

@@ -157,8 +157,22 @@ class Scraper:
         while True:
             try:
                 return self.get_msg_by_id(next_id, expand=False)
-            except EndRange:
-                raise EndRange("Already at end of date range.")
+            except EndRange as e:
+                # in this case, the message is missing. But it seems that sometimes,
+                #   that doesn't mean we're done so try for another 15 messages
+                if str(e).startswith("No message with id"):
+                    id = next_id + 1
+                    while id - next_id <= 15:
+                        try:
+                            msg = self.get_msg_by_id(id, expand=False)
+                            return msg
+                        except: pass
+                        id += 1
+
+                    if id - next_id > 15:
+                        raise EndRange("Already at end of date range.")
+                else:
+                    raise EndRange("Already at end of date range.")
             except XPostThrowaway: next_id += 1
         
     def prev(self):
@@ -173,8 +187,22 @@ class Scraper:
         while True:
             try:
                 return self.get_msg_by_id(prev_id, expand=False)
-            except EndRange:
-                raise EndRange("Already at beginning of date range.")
+            except EndRange as e:
+                 # in this case, the message is missing. But it seems that sometimes,
+                #   that doesn't mean we're done so try for another 15 messages
+                if str(e).startswith("No message with id"):
+                    id = prev_id - 1
+                    while prev_id - id <= 15:
+                        try:
+                            msg = self.get_msg_by_id(id, expand=False)
+                            return msg
+                        except: pass
+                        id -= 1
+
+                    if prev_id - id > 15:
+                        raise EndRange("Already at end of date range.")
+                else:
+                    raise EndRange("Already at end of date range.")
             except XPostThrowaway: prev_id -= 1
 
     def get_media(self, id):
