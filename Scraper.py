@@ -35,7 +35,7 @@ class Scraper:
         """Constructor
         
         NOTE: If using a sql database, a table "Scraper" will be created with the following collumns:
-            (Channel TINYTEXT, ID INT UNSIGNED, Media TINYTEXT, xpost TINYTEXT, DT DATETIME, message MEDIUMTEXT, comment TINYTEXT)
+            (Channel TINYTEXT, ID INT UNSIGNED, Media TINYTEXT, Xpost TINYTEXT, DT DATETIME, Message MEDIUMTEXT, Comment TINYTEXT)
                 Where Media is a comma separated list of the ids of any media attached to this message,
                       xpost is the channel name for the channel from which this post was crossposted from (if any),
                       DT is in utc
@@ -78,6 +78,8 @@ class Scraper:
 
         # variables for holding message information
         self.msg = None
+        self.comment = ""
+        self.__loaded_comment = ""
         self.media = []
         if not self.dwnld_media:
             self.media_f = NamedTemporaryFile()
@@ -218,6 +220,12 @@ class Scraper:
         # if no database, just return the telegram loaded from the internet
         if self.db is None: return self.load_msg_from_telegram(id, expand=expand)
 
+        # check if the current comment needs to be committed
+        if self.__loaded_comment != self.comment:
+            self.db.execute("UPDATE Scraper SET Comment = ? WHERE Channel = ? AND ID = ?", (self.comment,
+                self.chnl.username, self.msg_id))
+            self.db.commit()
+
         # check for entry in database
         msg = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND ID = ?", (self.chnl.username, id)).fetchall()
         # if there's more than one entry, there's a problem with the database so inform the user
@@ -249,6 +257,8 @@ class Scraper:
             self.fwd = msg[0][4]
             self.msg_dat = dt
             self.comment = msg[0][6]
+            # keep track of comment when it was loaded so we can tell if a commit to the database is necessary
+            self.__loaded_comment = msg[0][6]
 
     def load_msg_from_telegram(self, id, expand:bool = False):
         """Loads a message from telegram
@@ -330,9 +340,14 @@ class Scraper:
 
         self.client = None
 
-        try:
-            self.db.close()
-        except: pass
+        if not self.db is None:
+            try:
+                # check if the current comment needs to be committed
+                if self.__loaded_comment != self.comment:
+                    self.db.execute("UPDATE Scraper SET Comment = ? WHERE Channel = ? AND ID = ?", (self.comment,
+                        self.chnl.username, self.msg_id))
+                    self.db.commit()
+            finally: self.db.close()
 
         try: unregister(self.close)
         except: pass

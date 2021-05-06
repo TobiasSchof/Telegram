@@ -284,11 +284,12 @@ class Main(QMainWindow):
         self.prev_msg_btn.setEnabled(False)
         self.next_msg_btn.setEnabled(False)
 
-        # connect channel id setting
+        # connect channel id field
         self.msg_id.setValidator(QIntValidator(bottom=0))
         self.msg_id.editingFinished.connect(self.jump_to_id)
 
-        # setup the movie player 
+        # connect comment field
+        self.comment_box.textChanged.connect(self.parse_comment)
 
         # open settings window
         self.settings = Settings_window()
@@ -302,6 +303,23 @@ class Main(QMainWindow):
         # placeholder is tiny for some reason at start so we load
         #   media after showing window to scale correctly
         self.load_media(0)
+
+    def parse_comment(self):
+        """Limits the comment box to 255 characters"""
+
+        # if text is too long, truncate it
+        if len(self.comment_box.toPlainText()) > 255:
+            # otherwise, truncate to 255 characters
+            self.comment_box.setPlainText(self.comment_box.toPlainText()[:255])
+            # put cursor at end of text
+            curs = self.comment_box.textCursor()
+            curs.setPosition(255)
+            self.comment_box.setTextCursor(curs)
+
+        # update message's comment field (which will be committed 
+        #   when message is changed or when scraper is cleaned up)
+        if not self.scraper is None:
+            self.scraper.comment = self.comment_box.toPlainText()
 
     def jump_to_id(self, id=None):
         """Jumps to the given id, or to the id in the msg_id box if id is None
@@ -426,6 +444,10 @@ class Main(QMainWindow):
         self.msg_id.setStyleSheet("")
         self.msg_id.setToolTip("")
 
+        # load comment field
+        try: self.comment_box.setPlainText(self.scraper.comment)
+        except: self.comment_box.setPlainText("")
+
         self.load_media(0)
 
     def load_media(self, idx):
@@ -471,6 +493,8 @@ class Main(QMainWindow):
                         _.jumpToFrame(0)
                         self.unscaled_img = _.currentImage()
 
+            # video player will resize and scale itself correctly so we only have
+            #   to worry about size if in "label" mode
             if self.media_type == "label":
                 # get label
                 label = self.media_box.currentWidget().layout().itemAt(0).widget()
