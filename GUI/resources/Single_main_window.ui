@@ -169,19 +169,22 @@
          </layout>
         </item>
         <item>
-         <widget class="QLabel" name="media_box">
-          <property name="maximumSize">
-           <size>
-            <width>16777215</width>
-            <height>16777215</height>
-           </size>
+         <widget class="QStackedWidget" name="media_box">
+          <property name="currentIndex">
+           <number>1</number>
           </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
+          <widget class="QWidget" name="label">
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="Media_Player" name="movie"/>
          </widget>
         </item>
        </layout>
@@ -490,6 +493,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Media_Player</class>
+   <extends>QWidget</extends>
+   <header>Main.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

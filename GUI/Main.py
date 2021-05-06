@@ -6,9 +6,12 @@ from glob import glob
 import sys, os
 
 # installs
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout,  QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit
-from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout, 
+    QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider)
+from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize, QUrl
 from PyQt5.QtGui import QMovie, QIntValidator
+from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
+from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5 import uic
 from googletrans import Translator
 
@@ -53,7 +56,6 @@ class Settings_window(QDialog):
 
         # setup entries in scroll area
         self.excludes = []
-        # lambda function for delete button
         self.parse()
 
         # make sure minimum size is set (to stop horizontal scrolling)
@@ -144,6 +146,88 @@ class Settings_window(QDialog):
         # otherwise, behave normally
         super().keyPressEvent(evt)
 
+class Media_Player(QWidget):
+    """A widget to create a media player
+    
+    modified from example at https://pythonprogramminglanguage.com/pyqt5-video-widget/
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Constructor"""
+
+        super().__init__(*args, **kwargs)
+
+        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+
+        self.videoWidget = QVideoWidget()
+
+        self.playButton = QToolButton()
+        self.playButton.setEnabled(False)
+        self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.playButton.clicked.connect(self.play)
+
+        self.positionSlider = QSlider(Qt.Horizontal)
+        self.positionSlider.setRange(0, 0)
+        self.positionSlider.sliderMoved.connect(self.setPosition)
+
+        self.controlLayout = QHBoxLayout()
+        self.controlLayout.setContentsMargins(0, 0, 0, 0)
+        self.controlLayout.addWidget(self.playButton)
+        self.controlLayout.addWidget(self.positionSlider)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.videoWidget)
+        layout.addLayout(self.controlLayout)
+
+        self.setLayout(layout)
+
+        self.mediaPlayer.setVideoOutput(self.videoWidget)
+        self.mediaPlayer.stateChanged.connect(self.mediaStateChanged)
+        self.mediaPlayer.positionChanged.connect(self.positionChanged)
+        self.mediaPlayer.durationChanged.connect(self.durationChanged)
+
+    def openFile(self, path):
+        """Opens the media file at the given path"""
+
+        if path != '':
+            self.mediaPlayer.setMedia(
+                    QMediaContent(QUrl.fromLocalFile(path)))
+            self.playButton.setEnabled(True)
+        else: raise ValueError("Path can't be empty.")
+
+    def play(self):
+        """Plays/pauses the currently loaded video"""
+
+        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
+            self.mediaPlayer.pause()
+        else:
+            self.mediaPlayer.play()
+
+    def mediaStateChanged(self, state):
+        """Sets play/pause button depending on current video state"""
+
+        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
+            self.playButton.setIcon(
+                    self.style().standardIcon(QStyle.SP_MediaPause))
+        else:
+            self.playButton.setIcon(
+                    self.style().standardIcon(QStyle.SP_MediaPlay))
+
+    def positionChanged(self, position):
+        """Set slider for current position"""
+
+        self.positionSlider.setValue(position)
+
+    def durationChanged(self, duration):
+        """Set slider for current position"""
+
+        self.positionSlider.setRange(0, duration)
+
+    def setPosition(self, position):
+        """Set current position in video"""
+
+        self.mediaPlayer.setPosition(position)
+
 class Main(QMainWindow):
 
     def __init__(self):
@@ -204,6 +288,8 @@ class Main(QMainWindow):
         self.msg_id.setValidator(QIntValidator(bottom=0))
         self.msg_id.editingFinished.connect(self.jump_to_id)
 
+        # setup the movie player 
+
         # open settings window
         self.settings = Settings_window()
         ret = self.settings.exec_()
@@ -231,9 +317,15 @@ class Main(QMainWindow):
 
         if self.scraper is None: raise AttributeError("No active scraper.")
 
-        self.scraper.get_msg_by_id(id, False)
-        
-        self.load_msg()
+        try:
+            self.scraper.get_msg_by_id(id, False)
+            self.load_msg()
+            self.msg_id.setStyleSheet("")
+            self.msg_id.setToolTip("")
+        except EndRange:
+            self.msg_id.setText(str(self.scraper.msg_id))
+            self.msg_id.setStyleSheet("background-color:red;")
+            self.msg_id.setToolTip("ID {} not in date range.".format(id)) 
 
     def edit_scraper(self):
         """Change the channel being parsed"""
@@ -330,6 +422,10 @@ class Main(QMainWindow):
         except EndRange:
             self.next_msg_btn.setEnabled(False)
 
+        # reset style sheet to get rid of any errors previously indicated
+        self.msg_id.setStyleSheet("")
+        self.msg_id.setToolTip("")
+
         self.load_media(0)
 
     def load_media(self, idx):
@@ -350,23 +446,47 @@ class Main(QMainWindow):
                 except (IndexError, AttributeError, ZeroDivisionError):
                     self.media_f = ":/placeholder/no_img.jpg"
 
-                # make a QMovie to get unscaled frame
-                _ = QMovie(self.media_f)
-                _.jumpToFrame(0)
-                self.unscaled_img = _.currentImage()
+                if self.media_f.endswith((".jpg", ".png", ".gif")):
+                    self.media_type = "label"
+                    # set media box to qlabel widget
+                    self.media_box.setCurrentIndex(0)
+                    # make a QMovie to get unscaled frame
+                    _ = QMovie(self.media_f)
+                    _.jumpToFrame(0)
+                    self.unscaled_img = _.currentImage()
+                else:
+                    self.media_type = "movie"
+                    self.media_box.setCurrentIndex(1)
+                    try:
+                        self.media_box.currentWidget().openFile(self.media_f)
+                    # if there was an error, display placeholder image
+                    except Exception as e:
+                        print(e)
+                        self.media_f = ":/placeholder/no_img.jpg"
+                        self.media_type = "label"
+                        # set media box to qlabel widget
+                        self.media_box.setCurrentIndex(0)
+                        # make a QMovie to get unscaled frame
+                        _ = QMovie(self.media_f)
+                        _.jumpToFrame(0)
+                        self.unscaled_img = _.currentImage()
 
-            # get aspect ratio
-            scaled_size = self.unscaled_img.scaled(self.media_box.width(),
-                        self.media_box.height(), Qt.KeepAspectRatio).size()
+            if self.media_type == "label":
+                # get label
+                label = self.media_box.currentWidget().layout().itemAt(0).widget()
+                # get aspect ratio
+                scaled_size = self.unscaled_img.scaled(label.width(),
+                            label.height(), Qt.KeepAspectRatio).size()
 
-            # load new movie (scaling doesn't work once we jump to frame)
-            movie = QMovie(self.media_f)
-            # scale down
-            movie.setScaledSize(scaled_size)
-            self.media_box.setMovie(movie)
-            movie.start()
-            # set minimum size so we can scale back down
-            self.media_box.setMinimumSize(QSize(1,1))
+                # load new movie (scaling doesn't work once we jump to frame)
+                movie = QMovie(self.media_f)
+                # scale down
+                movie.setScaledSize(scaled_size)
+                label.setMovie(movie)
+                movie.start()
+                # set minimum size so we can scale back down
+                label.setMinimumSize(QSize(1,1))
+            
             self.media_idx = idx
 
             # disable buttons

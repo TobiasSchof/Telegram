@@ -231,12 +231,24 @@ class Scraper:
                         self.msg, "" if self.fwd is None else self.fwd, self.msg_date, ""))
             self.db.commit()
         else:
-            # otherwise load message info from database
+            dt = datetime.fromisoformat(msg[0][5])
+            # check date range
+            if expand:
+                if dt > self.end:
+                    self.end = dt
+                if dt < self.start:
+                    self.start = dt
+            else:
+                if dt > self.end or dt < self.start:
+                    raise EndRange("Message {} out of date range.".format(id))
+
+            # if we didn't raise an exception, load message from database
             self.msg_id = msg[0][1]
             self.media = [int(id) for id in msg[0][2].split(",") if id != ""]
             self.msg = msg[0][3]
             self.fwd = msg[0][4]
-            self.comment = msg[0][5]
+            self.msg_dat = dt
+            self.comment = msg[0][6]
 
     def load_msg_from_telegram(self, id, expand:bool = False):
         """Loads a message from telegram
