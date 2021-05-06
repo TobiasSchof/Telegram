@@ -477,6 +477,12 @@ class Main(QMainWindow):
                     self.media_f = ":/placeholder/no_img.jpg"
 
                 if self.media_f.endswith((".jpg", ".png", ".gif")):
+                    # if previous media was movie, make sure it's paused
+                    try:
+                        if self.media_type == "movie":
+                            if self.media_box.currentWidget().mediaPlayer.state() == QMediaPlayer.PlayingState: 
+                                self.media_box.currentWidget().mediaPlayer.pause()
+                    except: pass
                     self.media_type = "label"
                     # set media box to qlabel widget
                     self.media_box.setCurrentIndex(0)
