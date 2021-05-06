@@ -192,7 +192,15 @@ class Scraper:
             if not os.path.isdir(dir): os.mkdir(dir)
             fname = os.path.join(dir, str(id))
             self.client.download_media(msg, fname)
-            return fname
+            # find actual file name (with extension)
+            files = glob(os.path.join(tel_scrape_path, self.chnl.username, "{}.*".format(id)))
+            # if glob found multiple possible files, raise an error
+            if len(files) > 1:
+                msg = "Found multiple possible files: "+("{}"*len(files)).format(*files)
+                raise FileExistsError(msg)
+            # if only one file, that's our file
+            elif len(files) == 1:
+                return files[0]
         else:
             print("download media file {}".format(id))
             self.client.download_media(msg, self.media_f.name)
