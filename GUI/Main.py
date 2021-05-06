@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 
 # inherent python libraries
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from glob import glob
 import sys, os
 
 # installs
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QGroupBox, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout,  QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit
 from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize
-from PyQt5.QtGui import QMovie
+from PyQt5.QtGui import QMovie, QIntValidator
 from PyQt5 import uic
 from googletrans import Translator
 
 # project files
-sys.path.append("/Users/tobias/Documents/Git/Telegram")
-from Scraper import Scraper
+sys.path.append(os.path.normpath(os.path.abspath(__file__) + (os.sep + os.pardir) * 2))
+from Scraper import Scraper, EndRange, NoMedia
+import resources.images
 
 # utc offset to get from QDateTimeEdit to UTC
 #   (E.g. Belarus is UTC+3 so utcoffset of -3 is used here)
@@ -26,89 +28,121 @@ resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resour
 tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Scraper")
 
 if not os.path.isdir(tel_scrape_path):
-    print(tel_scrape_path)
-    #os.mkdir(tel_scrape_path)
+    os.mkdir(tel_scrape_path)
 
-class Multi_Channel_Window(QDialog):
-    """Widget for multi channel/date range selection
+class Settings_window(QDialog):
+    """A widget to hold information about the scraper's settings"""
 
-    NOTE: for now, this class is not used as single channel parsing
-        was decided on for tagging
-    """
-
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Constructor"""
 
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
         # load ui
-        uic.loadUi(os.path.join(resource_path, "multi_setup_widget.ui"), self)
+        uic.loadUi(os.path.join(resource_path, "Settings_window.ui"), self)
 
-        # get ui for channels
-        self.chnl_ui = os.path.join(resource_path, "channel_range_selection.ui")
-
-        # make a list for channels
-        chnl = QWidget()
-
-        uic.loadUi(self.chnl_ui, chnl)
-        chnl.rmv.clicked.connect(lambda _: self.rmv_chnl(chnl))
-
-        self.chnls = [chnl]
-
-        self.channels_list.setWidgetResizable(True)
+        self.x_posts_area.setWidgetResizable(True)
         # turn off scroll bar on horizontal
-        self.channels_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.x_posts_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.channels_layout = QVBoxLayout()
-        chnls_grp = QGroupBox()
-        chnls_grp.setLayout(self.channels_layout)
-        self.channels_list.setWidget(chnls_grp)
+        # setup scroll area layout
+        self.x_post_layout = QVBoxLayout()
+        self.chnls_grp = QGroupBox()
+        self.chnls_grp.setLayout(self.x_post_layout)
+        self.x_posts_area.setWidget(self.chnls_grp)
 
-        self.channels_layout.addWidget(chnl)
+        # setup entries in scroll area
+        self.excludes = []
+        # lambda function for delete button
+        self.parse()
 
-        # this sets it so that horizontal scroll isn't possible
-        chnls_grp.setMinimumWidth(chnl.minimumSizeHint().width())
-        self.channels_list.setMinimumWidth(chnls_grp.minimumSizeHint().width())
+        # make sure minimum size is set (to stop horizontal scrolling)
+        self.chnls_grp.setMinimumWidth(self.x_post_layout.itemAt(0).widget().minimumSizeHint().width())
+        self.x_posts_area.setMinimumWidth(self.chnls_grp.minimumSizeHint().width())
 
-        self.add.clicked.connect(self.add_chnl)
-        self.load.clicked.connect(self.load_chnls)
+        # get db info fields
+        self.db_path = self.db_group.findChild(QLineEdit, "db_loc")
+        self.db_edit = self.db_group.findChild(QToolButton, "db_edit")
+        # connect db edit button
+        self.db_edit.pressed.connect(self.edit_db_loc)
 
-    def add_chnl(self):
-        """Adds a channel range"""
+        # check if there are any databases in default location
+        dbs = glob(os.path.join(tel_scrape_path, "*.db"))
+        if len(dbs) > 0: self.db_path.setText(dbs[0])
+        else: self.db_path.setText(os.path.join(tel_scrape_path, "Project1.db"))
 
-        # new widget
-        chnl = QWidget()
+        # TODO: Fetch previous settings from .ini file
+
+    def parse(self):
+        """A method to parse all the cross post items"""
+
+        self.excludes = [""]
+        removes = []
+        for idx in range(0, self.x_post_layout.count()):
+            # get widget
+            widge = self.x_post_layout.itemAt(idx).widget()
+            # if we find a blank channel, add it to the list of widgets to remove
+            if widge.chnl_nm.text() == "": removes.insert(0, idx)
+            # otherwise add it to the list of channels to exclude
+            else: self.excludes.insert(1, widge.chnl_nm.text())
+
+        # if last field is not blank, make it so
+        if len(removes) == 0 or removes[-1] != self.x_post_layout.count() -1:
+            # make a new widget
+            widge = QWidget()
+            # load ui
+            uic.loadUi(os.path.join(resource_path, "x_post_item.ui"), widge)
+            # connect delete button
+            rmv = lambda : (self.x_post_layout.removeWidget(widge),
+                            widge.setParent(None),
+                            self.parse())
+            # lambda function for parsing after text edit
+            chng = lambda : self.parse()
+            widge.dlt_btn.pressed.connect(rmv)
+            # connect editingFinished in qlabel
+            widge.chnl_nm.editingFinished.connect(chng)
+            # add it to the scroll area
+            self.x_post_layout.addWidget(widge)
+        # otherwise, don't remove last element
+        else: removes.pop(-1)
+
+        # remove blank elements. Remove is decreasing, so we don't need
+        #   to worry about indexes changing as we remove elements
+        for idx in removes:
+            w = self.x_post_layout.itemAt(idx).widget()
+            # disconnect slots
+            w.dlt_btn.pressed.disconnect()
+            w.chnl_nm.editingFinished.disconnect()
+            # disconnect from parent
+            w.setParent(None)
+            # clear from layout
+            self.x_post_layout.removeWidget(w)
+
+    def edit_db_loc(self):
+        """Method that's called when the edit db button is pressed"""
+
+        filedialog = QFileDialog(self)
+        # set to select save file
+        filedialog.setAcceptMode(QFileDialog.AcceptOpen)
+        # set filter to only show .db files
+        filedialog.setNameFilters(["Databases (*.db)", "All files (*.*)"])
+        filedialog.selectNameFilter("Databases (*.db)")
+        # set default directory
+        filedialog.setDirectory(tel_scrape_path)
         
-        # load elements
-        uic.loadUi(self.chnl_ui, chnl)
+        # if window was accepted
+        if (filedialog.exec()):
+            # pull filename
+            filename = filedialog.selectedFiles()[0]
+            self.db_path.setText(filename)
 
-        # connect remove button
-        chnl.rmv.clicked.connect(lambda _: self.rmv_chnl(chnl))
+    def keyPressEvent(self, evt):
+        """Override keyPressEvent to not close dialog box w/ enter"""
 
-        # add to list
-        self.chnls.append(chnl)
-
-        # add to layout
-        self.channels_layout.addWidget(chnl)
-
-    def rmv_chnl(self, chnl):
-        """Removes the given channel range"""
-
-        chnl = self.chnls.pop(self.chnls.index(chnl))
-
-        self.channels_layout.removeWidget(chnl)
-
-        chnl.setParent(None)
-
-    def load_chnls(self):
-        """Loads the given info"""
-
-        for chnl in self.chnls:
-            load_telegram(chnl.chnl_name.text(),
-                chnl.start_date.date(), chnl.start_date.time(),
-                chnl.end_date.date(), chnl.end_date.time())
-
-        self.close()
+        # if key was enter or return, return
+        if(evt.key() == Qt.Key_Enter or evt.key() == Qt.Key_Return): return
+        # otherwise, behave normally
+        super().keyPressEvent(evt)
 
 class Main(QMainWindow):
 
@@ -152,8 +186,8 @@ class Main(QMainWindow):
 
         # edits to channel or date range will create a new scraper
         self.chnl.editingFinished.connect(self.edit_scraper)
-        self.date_from.editingFinished.connect(self.edit_scraper)
-        self.date_to.editingFinished.connect(self.edit_scraper)
+        self.date_from.dateTimeChanged.connect(self.edit_scraper)
+        self.date_to.dateTimeChanged.connect(self.edit_scraper)
 
         # connect next and prev buttons for media
         self.prev_media_btn.clicked.connect(lambda _: self.load_media(self.media_idx-1))
@@ -166,21 +200,53 @@ class Main(QMainWindow):
         self.prev_msg_btn.setEnabled(False)
         self.next_msg_btn.setEnabled(False)
 
+        # connect channel id setting
+        self.msg_id.setValidator(QIntValidator(bottom=0))
+        self.msg_id.editingFinished.connect(self.jump_to_id)
+
+        # open settings window
+        self.settings = Settings_window()
+        ret = self.settings.exec_()
+        # if settings weren't confirmed, close
+        if not ret: sys.exit()
+
         # show GUI
         self.show()
+
+        # placeholder is tiny for some reason at start so we load
+        #   media after showing window to scale correctly
+        self.load_media(0)
+
+    def jump_to_id(self, id=None):
+        """Jumps to the given id, or to the id in the msg_id box if id is None
+
+        Args:
+            id = the id to jump to, or use msg_id line edit if None
+        """
+
+        if id is None:
+            id = int(self.msg_id.text())
+
+        if id < 0: raise ValueError("ID must be positive")
+
+        if self.scraper is None: raise AttributeError("No active scraper.")
+
+        self.scraper.get_msg_by_id(id, False)
+        
+        self.load_msg()
 
     def edit_scraper(self):
         """Change the channel being parsed"""
         
         # convert dates to datetimes in utc
         start = self.date_from.dateTime()
-        start = datetime(year = start.date().year(), month=start.date().month(), day=start.date().day(),
-            hour = start.time().hour()+utcoffset, minute = start.time().minute(), second = start.time().second(),
-            tzinfo=timezone.utc)
+        start = datetime(year = start.date().year(), month = start.date().month(), day = start.date().day(),
+            hour = start.time().hour(), minute = start.time().minute(), second = start.time().second(),
+            tzinfo=timezone.utc) + timedelta(hours = utcoffset)
         end = self.date_to.dateTime()
         end = datetime(year = end.date().year(), month=end.date().month(), day=end.date().day(),
-            hour = end.time().hour()+utcoffset, minute = end.time().minute(), second = end.time().second(),
-            tzinfo=timezone.utc)
+            hour = end.time().hour(), minute = end.time().minute(), second = end.time().second(),
+            tzinfo=timezone.utc) + timedelta(hours = utcoffset)
         # validate dates
         try: assert end <= datetime.now().astimezone(timezone.utc)
         except AssertionError:
@@ -197,21 +263,26 @@ class Main(QMainWindow):
         # if this describes the current scraper, do nothing
         if self.scraper is not None:
             if self.scraper.start == start and self.scraper.end == end:
-                if self.scraper.chnl_nm == self.chnl.text().split("/")[-1]: return
+                if self.scraper.chnl.username == self.chnl.text().split("/")[-1]: return
 
         # try to make scraper
         try: 
-            # cleanup old scraper because telethon doesn't like two being signed in
+            # cleanup old scraper
             if self.scraper is not None: 
                 self.scraper._cleanup()
                 self.scraper = None
-            self.scraper = Scraper(self.chnl.text(), start, end)
+            self.scraper = Scraper(chnl = self.chnl.text(), start = start, end = end,
+                db = self.settings.db_path.text(), dwnld_media = self.settings.media_sv.isChecked())
             self.chnl.setToolTip("The telegram channel to parse.")
             self.chnl.setStyleSheet("")
-        except:
+        except ValueError:
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.")
             self.chnl.setText("")
+        except Exception as e:
+            print(e)
+            self.chnl.setStyleSheet("background-color:red;")
+            self.chnl.setToolTip("No messages for this channel in\nthe given date range.") 
 
         self.load_msg()
 
@@ -229,18 +300,18 @@ class Main(QMainWindow):
             return
 
         # otherwise set original text to message text
-        self.orig_msg.setText(self.scraper.msg.message)
+        self.orig_msg.setText(self.scraper.msg)
 
         # and try to translate
         try:
-            trans = self.translator.translate(self.scraper.msg.message, src="ru")
+            trans = self.translator.translate(self.scraper.msg, src="ru")
             self.trans_msg.setText(trans.text)
         except Exception as e:
             print(e)
             self.trans_msg.setText("Error occurred with translation. Check internet connection.")
 
         # set message id box
-        self.msg_id.setText("{}".format(self.scraper.msg.id))
+        self.msg_id.setText("{}".format(self.scraper.msg_id))
 
         self.unscaled_img = None
 
@@ -249,18 +320,17 @@ class Main(QMainWindow):
             self.scraper.prev()
             self.scraper.next()
             self.prev_msg_btn.setEnabled(True)
-        except:
+        except EndRange:
             self.prev_msg_btn.setEnabled(False)
 
         try:
             self.scraper.next()
             self.scraper.prev()
             self.next_msg_btn.setEnabled(True)
-        except:
+        except EndRange:
             self.next_msg_btn.setEnabled(False)
 
-        if len(self.scraper.media) > 0:
-            self.load_media(0)
+        self.load_media(0)
 
     def load_media(self, idx):
         """Loads the media at the given idx from the scraper
@@ -273,17 +343,14 @@ class Main(QMainWindow):
                 reset the counter
         """
 
-        # TODO: get placeholder image
-        if self.scraper is None or len(self.scraper.media) == 0:
-            self.prev_media_btn.setEnabled(False)
-            self.next_media_btn.setEnabled(False)
-            return
-
         try:
             if self.unscaled_img is None or self.media_idx != idx:
-                self.media_f = self.scraper.get_media(self.scraper.media[idx%len(self.scraper.media)]) 
+                try:
+                    self.media_f = self.scraper.get_media(self.scraper.media[idx%len(self.scraper.media)]) 
+                except (IndexError, AttributeError, ZeroDivisionError):
+                    self.media_f = ":/placeholder/no_img.jpg"
 
-                # make a QMovie to display media
+                # make a QMovie to get unscaled frame
                 _ = QMovie(self.media_f)
                 _.jumpToFrame(0)
                 self.unscaled_img = _.currentImage()
@@ -291,7 +358,6 @@ class Main(QMainWindow):
             # get aspect ratio
             scaled_size = self.unscaled_img.scaled(self.media_box.width(),
                         self.media_box.height(), Qt.KeepAspectRatio).size()
-
 
             # load new movie (scaling doesn't work once we jump to frame)
             movie = QMovie(self.media_f)
@@ -304,7 +370,7 @@ class Main(QMainWindow):
             self.media_idx = idx
 
             # disable buttons
-            if len(self.scraper.media) == 1:
+            if self.scraper is None or len(self.scraper.media) <= 1:
                 self.prev_media_btn.setEnabled(False)
                 self.next_media_btn.setEnabled(False)
             else:
@@ -312,9 +378,11 @@ class Main(QMainWindow):
                 self.next_media_btn.setEnabled(True)
 
             # set media id
-            self.media_id.setText("{}".format(self.scraper.media[idx%len(self.scraper.media)]))
-        # load placeholder image
-        except Exception as e: print(e)
+            try:
+                self.media_id.setText("{}".format(self.scraper.media[idx%len(self.scraper.media)]))
+            except:
+                self.media_id.setText("---")
+        except Exception as e: raise e
 
     def resizeEvent(self, *args, **kwargs):
         """Implement resize event so we can reload image when window is made bigger"""

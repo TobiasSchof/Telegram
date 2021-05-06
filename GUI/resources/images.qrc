@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="placeholder">
+    <file>no_img.jpg</file>
+  </qresource>
+  <qresource prefix="edit">
+    <file>edit_pencil.png</file>
+  </qresource>
+  <qresource prefix="delete">
+    <file>trash_can.png</file>
+  </qresource> 
+</RCC>
