@@ -23,6 +23,9 @@ class NoMedia(Exception):
 class EndRange(Exception):
     pass
 
+class XPostThrowaway(Exception):
+    pass
+
 class Scraper:
     """A class to scrape messages from a Telegram channels over a
         given date range
@@ -62,6 +65,9 @@ class Scraper:
             raise ValueError("Start and end should have timezones")
         if not start <= end:
             raise ValueError("Start must be earlier than (or the same time as) end")
+        if type(x_post_excl) is not list: x_post_excl = [x_post_excl]
+        if len([chnl for chnl in x_post_excl if not chnl.startswith("t.me/")]) > 0:
+            raise ValueError("All excluded channels should be the full username beginning with t.me/")
 
         # setup cleanup method
         register(self._cleanup)
@@ -73,7 +79,7 @@ class Scraper:
         self.start = start
         self.end = end
         self.db = db
-        self.excl = x_post_excl if type(x_post_excl) is list else [x_post_excl]
+        self.excl = [chnl.lower() for chnl in x_post_excl]
         self.dwnld_media = dwnld_media
 
         # variables for holding message information
@@ -125,7 +131,15 @@ class Scraper:
                 raise e
 
         # load first message
-        self.get_msg_by_id(first_id)
+        while True:
+            try:
+                self.get_msg_by_id(first_id)
+                break
+            except XPostThrowaway:
+                first_id += 1
+                self.get_msg_by_id(first_id)
+            except EndRange:
+                raise EndRange("No messages that aren't crossposts form the listed channels in the date range.")
 
     def next(self):
         """Returns the next telegram in the date range
@@ -138,20 +152,30 @@ class Scraper:
         else:
             next_id = self.msg_id + 1
 
-        try:
-            return self.get_msg_by_id(next_id, expand=False)
-        except EndRange:
-            raise EndRange("Already at end of date range.")
+        # keep trying until we either find one that isn't an excluded crosspost
+        #   or EndRange is thrown
+        while True:
+            try:
+                return self.get_msg_by_id(next_id, expand=False)
+            except EndRange:
+                raise EndRange("Already at end of date range.")
+            except XPostThrowaway: next_id += 1
         
     def prev(self):
         """Returns the previous telegram in the date range
             (Will throw an error if this is the first telegram in the date range)
         """
 
-        try:
-            return self.get_msg_by_id(self.msg_id - 1, expand=False)
-        except EndRange:
-            raise EndRange("Already at beginning of date range.")
+        prev_id = self.msg_id - 1
+
+        # keep trying until we either find one that isn't an excluded crosspost
+        #   or EndRange is thrown
+        while True:
+            try:
+                return self.get_msg_by_id(prev_id, expand=False)
+            except EndRange:
+                raise EndRange("Already at beginning of date range.")
+            except XPostThrowaway: prev_id -= 1
 
     def get_media(self, id):
         """Downloads the media attached to message with the given id as
@@ -202,7 +226,6 @@ class Scraper:
             elif len(files) == 1:
                 return files[0]
         else:
-            print("download media file {}".format(id))
             self.client.download_media(msg, self.media_f.name)
             return self.media_f.name
 
@@ -215,8 +238,6 @@ class Scraper:
                             id is outside of the date range.
                             (if True, date range will be expanded to include this message,
                              if False, errors will be thrown)
-        Returns:
-            telethon.tl.patched.Message = the message at the given id
         """
 
         if self.client is None: return
@@ -240,33 +261,48 @@ class Scraper:
         if len(msg) > 1: raise sqlite3.DatabaseError("Database has more than one entry for message {} in channel {}.".format(id, self.chnl.username))
         # if there are no entries, load telegram
         elif len(msg) == 0:
-            self.load_msg_from_telegram(id, expand = expand)
-            # write information to database
-            self.db.execute("INSERT INTO Scraper VALUES (?, ?, ?, ?, ?, ?, ?)", (self.chnl.username, 
-                        self.msg_id, (("{},"*len(self.media))[:-1]).format(*self.media),
-                        self.msg, "" if self.fwd is None else self.fwd, self.msg_date, ""))
-            self.db.commit()
-        else:
-            dt = datetime.fromisoformat(msg[0][5])
-            # check date range
-            if expand:
-                if dt > self.end:
-                    self.end = dt
-                if dt < self.start:
-                    self.start = dt
-            else:
-                if dt > self.end or dt < self.start:
-                    raise EndRange("Message {} out of date range.".format(id))
+            # check if this id is media associated to another id
+            # if media is in middle
+            msg = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND Media LIKE ?", (self.chnl.username, '%,'+str(id)+',%')).fetchall()
+            # if multiple responses
+            if len(msg) > 1: raise sqlite3.DatabaseError("ID {} in channel {} seems be me associated to multiple messages.".format(id, self.chnl.username))
+            # if no responses
+            elif len(msg) == 0:
+                self.load_msg_from_telegram(id, expand = expand)
+                # write information to database
+                self.db.execute("INSERT INTO Scraper VALUES (?, ?, ?, ?, ?, ?, ?)", (self.chnl.username, 
+                            self.msg_id, ((",{}"*len(self.media))+",").format(*self.media),
+                            self.msg, "" if self.fwd is None else self.fwd, self.msg_date, ""))
+                self.db.commit()
+                return
+            # if one, just use that entry
 
-            # if we didn't raise an exception, load message from database
-            self.msg_id = msg[0][1]
-            self.media = [int(id) for id in msg[0][2].split(",") if id != ""]
-            self.msg = msg[0][3]
-            self.fwd = msg[0][4]
-            self.msg_dat = dt
-            self.comment = msg[0][6]
-            # keep track of comment when it was loaded so we can tell if a commit to the database is necessary
-            self.__loaded_comment = msg[0][6]
+        dt = datetime.fromisoformat(msg[0][5])
+        # check date range
+        if expand:
+            if dt > self.end:
+                self.end = dt
+            if dt < self.start:
+                self.start = dt
+        else:
+            if dt > self.end or dt < self.start:
+                raise EndRange("Message {} out of date range.".format(id))
+
+        # check for crosspost to be excluded
+        fwd = msg[0][4].lower()
+        if fwd.lower() in self.excl:
+            msg = "Crosspost from {}".format(fwd)
+            raise XPostThrowaway(msg)
+
+        # if we didn't raise an exception, load message from database
+        self.msg_id = msg[0][1]
+        self.media = [int(id) for id in msg[0][2].split(",") if id != ""]
+        self.msg = msg[0][3]
+        self.fwd = fwd
+        self.msg_dat = dt
+        self.comment = msg[0][6]
+        # keep track of comment when it was loaded so we can tell if a commit to the database is necessary
+        self.__loaded_comment = msg[0][6]
 
     def load_msg_from_telegram(self, id, expand:bool = False):
         """Loads a message from telegram
@@ -300,8 +336,12 @@ class Scraper:
         if srch_msg.forward is None:
             self.fwd = None
         else:
-            self.fwd = srch_msg.forward.from_id.channel_id
-            self.fwd = "t.me/"+self.client.get_entity(self.fwd).username
+            fwd = srch_msg.forward.from_id.channel_id
+            fwd = "t.me/"+self.client.get_entity(fwd).username
+            if fwd.lower() in self.excl:
+                msg = "Crosspost from {}".format(fwd)
+                raise XPostThrowaway(msg)
+            self.fwd = fwd
 
         # list to store ids for media
         self.media = []
@@ -312,9 +352,10 @@ class Scraper:
             old_msg = srch_msg
             prev_msg = self.client.get_messages(self.chnl, ids=old_msg.id-1)
 
-            while prev_msg is not None and prev_msg.message == "" and (old_msg.date - prev_msg.date) <= self.delt:
+            while prev_msg is not None and (old_msg.date - prev_msg.date) <= self.delt:
                 if old_msg.media is not None: self.media.insert(0, old_msg.id)
                 old_msg = prev_msg
+                if old_msg.message != "": break
                 prev_msg = self.client.get_messages(self.chnl, ids=old_msg.id-1)
 
         # set our instance variables
@@ -355,7 +396,9 @@ class Scraper:
                     self.db.execute("UPDATE Scraper SET Comment = ? WHERE Channel = ? AND ID = ?", (self.comment,
                         self.chnl.username, self.msg_id))
                     self.db.commit()
-            finally: self.db.close()
+            finally:
+                if self.db is not None and type(self.db) is not str:
+                    self.db.close()
 
         try: unregister(self.close)
         except: pass

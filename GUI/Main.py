@@ -17,7 +17,7 @@ from googletrans import Translator
 
 # project files
 sys.path.append(os.path.normpath(os.path.abspath(__file__) + (os.sep + os.pardir) * 2))
-from Scraper import Scraper, EndRange, NoMedia
+from Scraper import Scraper, EndRange, NoMedia, XPostThrowaway
 import resources.images
 
 # utc offset to get from QDateTimeEdit to UTC
@@ -78,15 +78,19 @@ class Settings_window(QDialog):
     def parse(self):
         """A method to parse all the cross post items"""
 
-        self.excludes = [""]
+        self.excludes = []
         removes = []
         for idx in range(0, self.x_post_layout.count()):
             # get widget
             widge = self.x_post_layout.itemAt(idx).widget()
             # if we find a blank channel, add it to the list of widgets to remove
             if widge.chnl_nm.text() == "": removes.insert(0, idx)
-            # otherwise add it to the list of channels to exclude
-            else: self.excludes.insert(1, widge.chnl_nm.text())
+            else:
+                # if channel name doesn't start with t.me/, prepend it
+                if not widge.chnl_nm.text().startswith("t.me/"):
+                    widge.chnl_nm.setText("t.me/{}".format(widge.chnl_nm.text()))
+                # add to list to exclude
+                self.excludes.append(widge.chnl_nm.text())
 
         # if last field is not blank, make it so
         if len(removes) == 0 or removes[-1] != self.x_post_layout.count() -1:
@@ -344,6 +348,10 @@ class Main(QMainWindow):
             self.msg_id.setText(str(self.scraper.msg_id))
             self.msg_id.setStyleSheet("background-color:red;")
             self.msg_id.setToolTip("ID {} not in date range.".format(id)) 
+        except XPostThrowaway as e:
+            self.msg_id.setText(str(self.scraper.msg_id))
+            self.msg_id.setStyleSheet("background-color:red;")
+            self.msg_id.setToolTip("ID {} is {}.".format(id, str(e).lower())) 
 
     def edit_scraper(self):
         """Change the channel being parsed"""
@@ -382,7 +390,8 @@ class Main(QMainWindow):
                 self.scraper._cleanup()
                 self.scraper = None
             self.scraper = Scraper(chnl = self.chnl.text(), start = start, end = end,
-                db = self.settings.db_path.text(), dwnld_media = self.settings.media_sv.isChecked())
+                db = self.settings.db_path.text(), x_post_excl = self.settings.excludes,
+                dwnld_media = self.settings.media_sv.isChecked())
             self.chnl.setToolTip("The telegram channel to parse.")
             self.chnl.setStyleSheet("")
         except ValueError:
@@ -390,7 +399,7 @@ class Main(QMainWindow):
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.")
             self.chnl.setText("")
         except Exception as e:
-            print(e)
+            raise e
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.") 
 
@@ -416,8 +425,7 @@ class Main(QMainWindow):
         try:
             trans = self.translator.translate(self.scraper.msg, src="ru")
             self.trans_msg.setText(trans.text)
-        except Exception as e:
-            print(e)
+        except Exception:
             self.trans_msg.setText("Error occurred with translation. Check internet connection.")
 
         # set message id box
@@ -482,8 +490,7 @@ class Main(QMainWindow):
                     try:
                         self.media_box.currentWidget().openFile(self.media_f)
                     # if there was an error, display placeholder image
-                    except Exception as e:
-                        print(e)
+                    except Exception:
                         self.media_f = ":/placeholder/no_img.jpg"
                         self.media_type = "label"
                         # set media box to qlabel widget
