@@ -120,7 +120,7 @@
       <item row="8" column="0" colspan="2">
        <widget class="QPlainTextEdit" name="comment_box">
         <property name="maximumBlockCount">
-         <number>255</number>
+         <number>0</number>
         </property>
         <property name="placeholderText">
          <string>comments</string>
