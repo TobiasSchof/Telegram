@@ -2,12 +2,14 @@
 
 # inherent python libraries
 from datetime import datetime, timezone, timedelta
+from configparser import ConfigParser
 from glob import glob
-import sys, os
+import sys, os, math
 
 # installs
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout, 
-    QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider)
+    QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider, QInputDialog, QMessageBox,
+    QGridLayout, QCheckBox, QSpacerItem, QSizePolicy)
 from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize, QUrl
 from PyQt5.QtGui import QMovie, QIntValidator
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
@@ -66,14 +68,48 @@ class Settings_window(QDialog):
         self.db_path = self.db_group.findChild(QLineEdit, "db_loc")
         self.db_edit = self.db_group.findChild(QToolButton, "db_edit")
         # connect db edit button
-        self.db_edit.pressed.connect(self.edit_db_loc)
+        self.db_edit.clicked.connect(self.edit_db_loc)
 
-        # check if there are any databases in default location
-        dbs = glob(os.path.join(tel_scrape_path, "*.db"))
-        if len(dbs) > 0: self.db_path.setText(dbs[0])
-        else: self.db_path.setText(os.path.join(tel_scrape_path, "Project1.db"))
+        # if a session file exists, use it
+        if os.path.isfile(os.path.join(tel_scrape_path, "session.ini")):
+            cf = ConfigParser()
+            cf.read(os.path.join(tel_scrape_path, "session.ini"))
 
-        # TODO: Fetch previous settings from .ini file
+            # set database location
+            self.db_path.setText(cf["Settings"]["db_loc"])
+
+            # set save media button
+            self.media_sv.setChecked(cf["Settings"]["sv_media"] == "True")
+
+            # set excludes
+            excludes = cf["Settings"]["excludes"].split("|")
+            # add excludes to widget list
+            for excl in excludes:
+                if excl != "":
+                    # make a new widget
+                    widge = QWidget()
+                    # load ui
+                    uic.loadUi(os.path.join(resource_path, "x_post_item.ui"), widge)
+                    # connect delete button
+                    rmv = lambda : (self.x_post_layout.removeWidget(widge),
+                                    widge.setParent(None),
+                                    self.parse())
+                    # set text
+                    widge.chnl_nm.setText(excl)
+                    # lambda function for parsing after text edit
+                    chng = lambda : self.parse()
+                    widge.dlt_btn.clicked.connect(rmv)
+                    # connect editingFinished in qlabel
+                    widge.chnl_nm.editingFinished.connect(chng)
+                    # add it to the scroll area
+                    self.x_post_layout.addWidget(widge)
+            # parse excludes
+            self.parse()
+        else:
+            # check if there are any databases in default location
+            dbs = glob(os.path.join(tel_scrape_path, "*.db"))
+            if len(dbs) > 0: self.db_path.setText(dbs[0])
+            else: self.db_path.setText(os.path.join(tel_scrape_path, "Project1.db"))
 
     def parse(self):
         """A method to parse all the cross post items"""
@@ -104,7 +140,7 @@ class Settings_window(QDialog):
                             self.parse())
             # lambda function for parsing after text edit
             chng = lambda : self.parse()
-            widge.dlt_btn.pressed.connect(rmv)
+            widge.dlt_btn.clicked.connect(rmv)
             # connect editingFinished in qlabel
             widge.chnl_nm.editingFinished.connect(chng)
             # add it to the scroll area
@@ -117,7 +153,7 @@ class Settings_window(QDialog):
         for idx in removes:
             w = self.x_post_layout.itemAt(idx).widget()
             # disconnect slots
-            w.dlt_btn.pressed.disconnect()
+            w.dlt_btn.clicked.disconnect()
             w.chnl_nm.editingFinished.disconnect()
             # disconnect from parent
             w.setParent(None)
@@ -232,6 +268,104 @@ class Media_Player(QWidget):
 
         self.mediaPlayer.setPosition(position)
 
+class Tag_Area(QWidget):
+    """A widget to handle the tag area"""
+
+    def __init__(self, main, *args, **kwargs):
+        """Constructor
+        
+        Args:
+            main = the main widget
+        """
+
+        super().__init__(*args, **kwargs)
+
+        uic.loadUi(os.path.join(resource_path, "tag_area.ui"), self)
+
+        self.main = main
+
+        # setup tag area
+        self.add_tag_btn.clicked.connect(self.add)
+        self.setup()
+
+    def setup(self):
+        """A method to setup the tag area with the current scraper's tags"""
+
+        if self.main.scraper is None:
+            self.setEnabled(False)
+            return
+        else:
+            self.setEnabled(True)
+
+        # create a new layout
+        new_layout = QGridLayout()
+        
+        # row/column starting positions
+        row = 0
+        column = 0
+
+        # get the size of one column unit (1/5th of the scroll area width)
+        col_u = self.frameSize().width() / 5
+
+        # set spacing to a known number
+        new_layout.setHorizontalSpacing(10)
+
+        # iterate through tags, adding them to layout
+        for tag in self.main.scraper.tags:
+            # make checkbox with correct status
+            chk_bx = QCheckBox(tag)
+            chk_bx.setChecked(self.main.scraper.tags[tag])
+            # figure out how many column units this tag should take up (factoring in spacing)
+            col_span = max(1, math.ceil((chk_bx.sizeHint().width()) / col_u))
+            if col_span > 2:
+                # check if with spacing, we fit in one fewer column
+                if chk_bx.sizeHint().width() <= ((col_span - 1) * col_u + (col_span - 2) * 10):
+                    col_span -= 1
+            # decide if column span should push this tag to a new row
+            if col_span + column > 5 and column != 0:
+                column = 0
+                row += 1
+            # add tag
+            new_layout.addWidget(chk_bx, row, column, 1, col_span)
+            # calculate row/column start for next tag
+            column = (min(column + col_span, 5)) % 5
+            row = row + 1 if column == 0 else row
+
+        # add add button
+        new_layout.addWidget(self.add_tag_btn, row, column)
+
+        # set old layout to temporary widget to re-parent it
+        QWidget().setLayout(self.layout())
+
+        # set new layout
+        self.setLayout(new_layout) 
+
+    def add(self):
+        """A mthod to add a tag to the scraper's current tag list"""
+
+        # make dialog to get relevant info
+        dialog = QDialog()
+        uic.loadUi(os.path.join(resource_path, "add_tag.ui"), dialog)
+        
+        # display dialog
+        accepted = dialog.exec()
+
+        # if dialog was accepted, add tag
+        if accepted:
+            try:
+                # add tag to scraper
+                self.main.scraper.add_tag(dialog.tag_nm.text(), dialog.tag_def_val.currentText() == "True")
+                # redo tags in box
+                self.setup()
+            except Exception as e:
+                warning = QMessageBox()
+                warning.setText(str(e))
+                warning.setIcon(QMessageBox.Warning)
+                #warning.setTitle("Tag error")
+                warning.exec()
+        # otherwise, do nothing
+        else: pass
+
 class Main(QMainWindow):
 
     def __init__(self):
@@ -282,8 +416,8 @@ class Main(QMainWindow):
         self.next_media_btn.clicked.connect(lambda _: self.load_media(self.media_idx+1))
 
         # connect next and prev buttons for message
-        self.prev_msg_btn.clicked.connect(lambda _: (self.scraper.prev(), self.load_msg()))
-        self.next_msg_btn.clicked.connect(lambda _: (self.scraper.next(), self.load_msg()))
+        self.prev_msg_btn.clicked.connect(lambda _: (self.set_tags(), self.scraper.prev(), self.load_msg()))
+        self.next_msg_btn.clicked.connect(lambda _: (self.set_tags(), self.scraper.next(), self.load_msg()))
 
         self.prev_msg_btn.setEnabled(False)
         self.next_msg_btn.setEnabled(False)
@@ -295,6 +429,17 @@ class Main(QMainWindow):
         # connect comment field
         self.comment_box.textChanged.connect(self.parse_comment)
 
+        # disable msg id box and comment box if necessary
+        if self.scraper is None:
+            self.msg_id.setEnabled(False)
+            self.comment_box.setEnabled(False)
+        else:
+            self.msg_id.setEnabled(True)
+            self.comment_box.setEnabled(True)
+
+        self.tag_area = Tag_Area(self)
+        self.tag_scroll_area.setWidget(self.tag_area)
+
         # open settings window
         self.settings = Settings_window()
         ret = self.settings.exec_()
@@ -304,9 +449,35 @@ class Main(QMainWindow):
         # show GUI
         self.show()
 
-        # placeholder is tiny for some reason at start so we load
-        #   media after showing window to scale correctly
-        self.load_media(0)
+        # set channel info if session file exists
+        if os.path.isfile(os.path.join(tel_scrape_path, "session.ini")):
+            cf = ConfigParser()
+            cf.read(os.path.join(tel_scrape_path, "session.ini"))
+
+            # if there's info about the scraper, load it
+            if "Scraper" in cf:
+                chnl = "t.me/"+cf["Scraper"]["chnl"]
+                start = datetime.fromisoformat(cf["Scraper"]["start"])
+                end = datetime.fromisoformat(cf["Scraper"]["end"])
+                # fill in fields
+                self.date_from.setDateTime(start)
+                self.date_to.setDateTime(end)
+                self.chnl.setText(chnl)
+                # make scraper
+                self.edit_scraper()
+                # set id
+                self.scraper.get_msg_by_id(int(cf["Scraper"]["msg_id"]))
+                # load message
+                self.load_msg()
+                # load media
+                try: self.load_media(self.scraper.media.index(int(cf["Scraper"]["media_id"])))
+                except: pass
+
+            else: self.load_media(0)
+        else:
+            # placeholder is tiny for some reason at start so we load
+            #   media after showing window to scale correctly
+            self.load_media(0)
 
     def parse_comment(self):
         """Limits the comment box to 255 characters"""
@@ -340,6 +511,7 @@ class Main(QMainWindow):
         if self.scraper is None: raise AttributeError("No active scraper.")
 
         try:
+            self.set_tags()
             self.scraper.get_msg_by_id(id, False)
             self.load_msg()
             self.msg_id.setStyleSheet("")
@@ -387,6 +559,7 @@ class Main(QMainWindow):
         try: 
             # cleanup old scraper
             if self.scraper is not None: 
+                self.set_tags()
                 self.scraper._cleanup()
                 self.scraper = None
             self.scraper = Scraper(chnl = self.chnl.text(), start = start, end = end,
@@ -398,16 +571,31 @@ class Main(QMainWindow):
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.")
             self.chnl.setText("")
-        except Exception as e:
-            raise e
+        except Exception:
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.") 
+        finally:
+            if self.scraper is None:
+                self.msg_id.setEnabled(False)
+                self.comment_box.setEnabled(False)
+            else:
+                self.msg_id.setEnabled(True)
+                self.comment_box.setEnabled(True)
 
         self.load_msg()
+
+    def set_tags(self):
+        """Pulls tags from tag area and loads them into scraper"""
+
+        for bx in self.tag_area.findChildren(QCheckBox):
+            self.scraper.tags[bx.text()] = bx.isChecked()
 
     def load_msg(self):
         """Loads the message currently held by
             the scraper"""
+
+        # load tags
+        self.tag_area.setup()
 
         # clear messages if there's no valid scraper
         if self.scraper is None:
@@ -438,16 +626,14 @@ class Main(QMainWindow):
             self.scraper.prev()
             self.scraper.next()
             self.prev_msg_btn.setEnabled(True)
-        except EndRange as e:
-            print(e)
+        except EndRange:
             self.prev_msg_btn.setEnabled(False)
 
         try:
             self.scraper.next()
             self.scraper.prev()
             self.next_msg_btn.setEnabled(True)
-        except EndRange as e:
-            raise e
+        except EndRange:
             self.next_msg_btn.setEnabled(False)
 
         # reset style sheet to get rid of any errors previously indicated
@@ -541,7 +727,7 @@ class Main(QMainWindow):
                 self.media_id.setText("{}".format(self.scraper.media[idx%len(self.scraper.media)]))
             except:
                 self.media_id.setText("---")
-        except Exception as e: raise e
+        except: pass
 
     def resizeEvent(self, *args, **kwargs):
         """Implement resize event so we can reload image when window is made bigger"""
@@ -549,6 +735,36 @@ class Main(QMainWindow):
         super().resizeEvent(*args, **kwargs)
 
         self.load_media(self.media_idx)
+
+    def closeEvent(self, e):
+        """Catch close"""
+
+        try: self.set_tags()
+        except: pass
+
+        try: self.scraper._cleanup()
+        except: pass
+
+        try:
+            cf = ConfigParser()
+            # store settings info
+            cf["Settings"] = {"db_loc":self.settings.db_path.text(),
+                              "excludes":"|".join(self.settings.excludes),
+                              "sv_media":self.settings.media_sv.isChecked()}
+            # store info about current scraper if there is one
+            if self.scraper is not None:
+                cf["Scraper"] = {"start":self.scraper.start - timedelta(hours = utcoffset),
+                                 "end":self.scraper.end - timedelta(hours = utcoffset),
+                                 "chnl":self.scraper.chnl.username,
+                                 "msg_id":self.scraper.msg_id,
+                                 "media_id":self.media_id.text()}
+
+            # write config file
+            with open(os.path.join(tel_scrape_path, "session.ini"), "w") as f:
+                cf.write(f)
+        except Exception as exc: print(exc)
+
+        super().closeEvent(e)
 
 if __name__ == "__main__":
 

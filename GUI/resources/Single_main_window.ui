@@ -19,7 +19,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="1" column="2">
-     <layout class="QGridLayout" name="Main_layout" rowstretch="0,0,0,0,0,0,10,0,5" columnstretch="0,0,5" columnminimumwidth="0,0,0">
+     <layout class="QGridLayout" name="Main_layout" rowstretch="0,0,0,0,0,0,10,5,2" columnstretch="0,0,5">
       <property name="leftMargin">
        <number>10</number>
       </property>
@@ -32,165 +32,12 @@
       <property name="bottomMargin">
        <number>5</number>
       </property>
-      <item row="6" column="1">
-       <widget class="QScrollArea" name="trans_scroll">
-        <property name="minimumSize">
-         <size>
-          <width>270</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-        </property>
-        <widget class="QWidget" name="scrollAreaWidgetContents">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>268</width>
-           <height>203</height>
-          </rect>
-         </property>
-        </widget>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QLabel" name="trans_lbl">
+      <item row="5" column="0">
+       <widget class="QLabel" name="orig_lbl">
         <property name="text">
-         <string>Google Translate:</string>
+         <string>Original:</string>
         </property>
        </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QScrollArea" name="orig_scroll">
-        <property name="minimumSize">
-         <size>
-          <width>270</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Sunken</enum>
-        </property>
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-        </property>
-        <widget class="QWidget" name="scrollAreaWidgetContents_2">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>268</width>
-           <height>203</height>
-          </rect>
-         </property>
-        </widget>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="3">
-       <widget class="Line" name="line">
-        <property name="styleSheet">
-         <string notr="true"/>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QLabel" name="msg_lbl">
-        <property name="text">
-         <string>Message</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0" colspan="2">
-       <widget class="QPlainTextEdit" name="comment_box">
-        <property name="maximumBlockCount">
-         <number>0</number>
-        </property>
-        <property name="placeholderText">
-         <string>comments</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2" rowspan="6">
-       <layout class="QVBoxLayout" name="media_layout" stretch="0,0,5">
-        <item>
-         <widget class="QLabel" name="media_lbl">
-          <property name="text">
-           <string>Media</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="media_info_layout">
-          <item>
-           <widget class="QToolButton" name="prev_media_btn">
-            <property name="text">
-             <string>&lt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="media_id_lbl">
-            <property name="text">
-             <string>message ID:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="media_id">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QToolButton" name="next_media_btn">
-            <property name="text">
-             <string>&gt;</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QStackedWidget" name="media_box">
-          <property name="currentIndex">
-           <number>1</number>
-          </property>
-          <widget class="QWidget" name="label">
-           <layout class="QVBoxLayout" name="verticalLayout">
-            <item>
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string/>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="Media_Player" name="movie"/>
-         </widget>
-        </item>
-       </layout>
       </item>
       <item row="4" column="0" colspan="2">
        <layout class="QHBoxLayout" name="msg_info_layout" stretch="0,10,0,0,10,0">
@@ -306,6 +153,92 @@
         </item>
        </layout>
       </item>
+      <item row="3" column="2" rowspan="6">
+       <layout class="QVBoxLayout" name="media_layout" stretch="0,0,5">
+        <item>
+         <widget class="QLabel" name="media_lbl">
+          <property name="text">
+           <string>Media</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="media_info_layout">
+          <item>
+           <widget class="QToolButton" name="prev_media_btn">
+            <property name="text">
+             <string>&lt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="media_id_lbl">
+            <property name="text">
+             <string>message ID:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="media_id">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="next_media_btn">
+            <property name="text">
+             <string>&gt;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QStackedWidget" name="media_box">
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
+          <widget class="QWidget" name="label">
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="Media_Player" name="movie"/>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="7" column="0" colspan="2">
+       <widget class="QScrollArea" name="tag_scroll_area">
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents_3">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>548</width>
+           <height>88</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2"/>
+        </widget>
+       </widget>
+      </item>
       <item row="1" column="0" colspan="3">
        <layout class="QHBoxLayout" name="date_rng_layout">
         <item>
@@ -392,56 +325,98 @@
         </item>
        </layout>
       </item>
-      <item row="7" column="0" colspan="2">
-       <layout class="QGridLayout" name="tags_layout">
-        <item row="1" column="0">
-         <widget class="QCheckBox" name="checkBox">
-          <property name="text">
-           <string>tag2</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QCheckBox" name="checkBox_2">
-          <property name="text">
-           <string>tag1</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="checkBox_3">
-          <property name="text">
-           <string>tag3</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QCheckBox" name="checkBox_4">
-          <property name="text">
-           <string>tag4</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QCheckBox" name="checkBox_5">
-          <property name="text">
-           <string>tag5</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QCheckBox" name="checkBox_6">
-          <property name="text">
-           <string>tag6</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+      <item row="6" column="1">
+       <widget class="QScrollArea" name="trans_scroll">
+        <property name="minimumSize">
+         <size>
+          <width>270</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>268</width>
+           <height>177</height>
+          </rect>
+         </property>
+        </widget>
+       </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="orig_lbl">
+      <item row="6" column="0">
+       <widget class="QScrollArea" name="orig_scroll">
+        <property name="minimumSize">
+         <size>
+          <width>270</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents_2">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>268</width>
+           <height>177</height>
+          </rect>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="2">
+       <widget class="QPlainTextEdit" name="comment_box">
+        <property name="maximumBlockCount">
+         <number>0</number>
+        </property>
+        <property name="placeholderText">
+         <string>comments</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QLabel" name="msg_lbl">
         <property name="text">
-         <string>Original:</string>
+         <string>Message</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="Line" name="line">
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLabel" name="trans_lbl">
+        <property name="text">
+         <string>Google Translate:</string>
         </property>
        </widget>
       </item>

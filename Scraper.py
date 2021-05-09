@@ -11,7 +11,6 @@ from telethon import TelegramClient
 import sqlite3
 import telethon.sync # this relieves the need to use telethon as an asyncio library
 
-config_file = "/Users/tobias/.Telegram_info.ini"
 tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Scraper")
 
 class TelegramError(Exception):
@@ -87,20 +86,22 @@ class Scraper:
         self.comment = ""
         self.__loaded_comment = ""
         self.media = []
+        self.tags = {}
         if not self.dwnld_media:
             self.media_f = NamedTemporaryFile()
 
         # get info for telegram client
         cf = ConfigParser()
-        cf.read(config_file)
+        cf.read(os.path.join(tel_scrape_path, ".Telegram_info.ini"))
         api_id = cf.getint("Thesis", "api_id")
         api_hash = cf.get("Thesis", "api_hash")
 
         # connect to telegram
         #   note, validation takes a second so we keep the client open
         #   as long as the class is alive (closed on exit)
-        self.client = TelegramClient('scraper', api_id, api_hash)
-        self.client.connect()
+        self.client = TelegramClient('scraper', api_id, api_hash, session=os.path.join(tel_scrape_path, "scraper.session"))
+        # authenticate (will use input if necessary)
+        self.client.start()
         self.chnl = self.client.get_entity(chnl)
 
         # get first message in range
@@ -283,8 +284,13 @@ class Scraper:
                 self.chnl.username, self.msg_id))
             self.db.commit()
 
+        # check if any tags need to be updated
+        try: self.commit_tags()
+        # attribute error if no database or if no message loaded
+        except: pass
+
         # check for entry in database
-        msg = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND ID = ?", (self.chnl.username, id)).fetchall()
+        msg = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND ID = ?", (self.chnl.username, str(id))).fetchall()
         # if there's more than one entry, there's a problem with the database so inform the user
         if len(msg) > 1: raise sqlite3.DatabaseError("Database has more than one entry for message {} in channel {}.".format(id, self.chnl.username))
         # if there are no entries, load telegram
@@ -298,10 +304,11 @@ class Scraper:
             elif len(msg) == 0:
                 self.load_msg_from_telegram(id, expand = expand)
                 # write information to database
-                self.db.execute("INSERT INTO Scraper VALUES (?, ?, ?, ?, ?, ?, ?)", (self.chnl.username, 
+                self.db.execute("INSERT INTO Scraper (Channel, ID, Media, Xpost, DT, Message, Comment) VALUES (?, ?, ?, ?, ?, ?, ?)", (self.chnl.username, 
                             self.msg_id, ((",{}"*len(self.media))+",").format(*self.media),
                             self.msg, "" if self.fwd is None else self.fwd, self.msg_date, ""))
                 self.db.commit()
+                self.load_tags()
                 return
             # if one, just use that entry
 
@@ -331,6 +338,7 @@ class Scraper:
         self.comment = msg[0][6]
         # keep track of comment when it was loaded so we can tell if a commit to the database is necessary
         self.__loaded_comment = msg[0][6]
+        self.load_tags()
 
     def load_msg_from_telegram(self, id, expand:bool = False):
         """Loads a message from telegram
@@ -407,6 +415,91 @@ class Scraper:
 
         return msg 
 
+    def add_tag(self, tag_nm, def_val=False):
+        """Adds a tag to the database
+
+        Args:
+            tag_nm = what the tag should be called
+            def_val = the default value that should be applied to the column
+        """
+
+        if tag_nm in self.tags:
+            raise ValueError("'{}' is already a tag.".format(tag_nm))
+
+        cmd = "ALTER TABLE Scraper ADD COLUMN '{}' BOOL DEFAULT {}".format(tag_nm, def_val)
+        try:
+            self.db.execute(cmd)
+            self.db.commit()
+            self.tags[tag_nm] = def_val
+        except Exception as e:
+            if str(e).startswith("duplicate column name"):
+                raise ValueError("'{}' is already a tag.".format(tag_nm))
+            else: raise e
+
+    def load_tags(self):
+        """Load tags from the database"""
+
+        # get the name of all tags
+        all_tags = self.db.execute("PRAGMA table_info(Scraper)").fetchall()[7:]
+        # get the entry for this message in the database
+        entry = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND ID = ?", (self.chnl.username, str(self.msg_id))).fetchall()
+        # make sure there's exactly one entry
+        if len(entry) > 1: raise sqlite3.DatabaseError("ID {} in channel {} seems be me associated to multiple messages.".format(self.msg_id, self.chnl.username))
+        if len(entry) == 0: raise sqlite3.DatabaseError("No database entry for {} in channel {}".format(self.msg_id, self.chnl.username))
+        entry = entry[0]
+
+        # clear tags dictionary
+        self.tags = {}
+        # iterate through tags, store value
+        for tag in all_tags:
+            self.tags[tag[1]] = bool(entry[tag[0]])
+
+    def commit_tags(self):
+        """A method to commit any tags that need to be committed to the database"""
+
+        if self.db is None: raise AttributeError("No database backing on this scraper.")
+
+        # pull current database tags into temporary dictionary
+
+        # check that all tags in self.tags are in database
+        all_tags = self.db.execute("PRAGMA table_info(Scraper)").fetchall()[7:]
+        to_add = [tag for tag in self.tags if tag not in all_tags]
+
+        # add any tags to database that aren't already there
+        if len(to_add) > 0:
+            for tag in to_add:
+                cmd = "ALTER TABLE Scraper ADD COLUMN '{}' BOOL DEFAULT {}".format(tag, False)
+                try:
+                    self.db.execute(cmd)
+                    self.db.commit()
+                except: pass
+
+        # get the entry for this message in the database
+        entry = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND ID = ?", (self.chnl.username, str(self.msg_id))).fetchall()
+        # make sure there's exactly one entry
+        if len(entry) > 1: raise sqlite3.DatabaseError("ID {} in channel {} seems be me associated to multiple messages.".format(self.msg_id, self.chnl.username))
+        if len(entry) == 0: raise sqlite3.DatabaseError("No database entry for {} in channel {}".format(self.msg_id, self.chnl.username))
+        entry = entry[0]
+
+        # make database tags dict
+        db_tags = {}
+        # iterate through tags, store value
+        for tag in all_tags:
+            db_tags[tag[1]] = bool(entry[tag[0]])
+
+        # find difference
+        edits = {tag:self.tags[tag] for tag in self.tags if self.tags[tag] != db_tags[tag]} 
+
+        if len(edits) == 0: return
+
+        # edit table with differences
+        for tag in edits:
+            cmd = "UPDATE Scraper SET {} = ? WHERE CHANNEL = ? AND ID = ?".format(tag)
+            self.db.execute(cmd, (self.tags[tag], self.chnl.username, self.msg_id))
+        
+        # commit change
+        self.db.commit()
+
     def _cleanup(self, *ignored):
         """Will close connection to the telegram client,
             rendering further calls to methods invalid"""
@@ -424,6 +517,9 @@ class Scraper:
                     self.db.execute("UPDATE Scraper SET Comment = ? WHERE Channel = ? AND ID = ?", (self.comment,
                         self.chnl.username, self.msg_id))
                     self.db.commit()
+                # commit tags if necessary
+                self.commit_tags()
+            except: pass
             finally:
                 if self.db is not None and type(self.db) is not str:
                     self.db.close()
