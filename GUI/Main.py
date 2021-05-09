@@ -9,13 +9,14 @@ import sys, os, math
 # installs
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout, 
     QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider, QInputDialog, QMessageBox,
-    QGridLayout, QCheckBox, QSpacerItem, QSizePolicy)
+    QGridLayout, QCheckBox, QSpacerItem, QSizePolicy, QMenuBar, QMenu, QAction)
 from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize, QUrl
 from PyQt5.QtGui import QMovie, QIntValidator
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5 import uic
 from googletrans import Translator
+from telethon import TelegramClient
 
 # project files
 sys.path.append(os.path.normpath(os.path.abspath(__file__) + (os.sep + os.pardir) * 2))
@@ -30,7 +31,7 @@ utcoffset = -3
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
 
 # Telegram Scraper folder
-tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Scraper")
+tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Tagger")
 
 if not os.path.isdir(tel_scrape_path):
     os.mkdir(tel_scrape_path)
@@ -377,7 +378,7 @@ class Main(QMainWindow):
         self.unscaled_img = None
 
         # load in ui
-        uic.loadUi(os.path.join(resource_path, "Single_main_window.ui"), self)
+        uic.loadUi(os.path.join(resource_path, "Main_window.ui"), self)
 
         # set window title
         self.setWindowTitle("Telegram tagger")
@@ -440,6 +441,34 @@ class Main(QMainWindow):
         self.tag_area = Tag_Area(self)
         self.tag_scroll_area.setWidget(self.tag_area)
 
+        # if no session file (used for telegram authentication) is present,
+        #   get one
+        if not os.path.isfile(os.path.join(tel_scrape_path, "scraper.session")):
+            num, accepted = QInputDialog.getText(self, "Tagger setup", "Phone number (with country code): ", QLineEdit.Normal, "")
+            # if number wasn't submitted, exit
+            if not accepted: sys.exit()
+
+            # otherwise send request to phone number
+            cf = ConfigParser()
+            cf.read(os.path.join(tel_scrape_path, ".Telegram_info.ini"))
+            
+            client = TelegramClient("scraper", cf["Thesis"]["api_id"], cf["Thesis"]["api_hash"]) 
+            client.connect()
+            client.send_code_request(num)
+
+            # get code from user
+            code, accepted = QInputDialog.getText(self, "Tagger setup", "Enter code sent through Telegram: ", QLineEdit.Normal, "")
+            # if number wasn't submitted, exit
+            if not accepted: sys.exit()
+
+            # authenticate
+            client.sign_in(num, code)
+
+            # now there should be a scraper.session file in the pwd
+            if not os.path.isfile("scraper.session"): raise FileNotFoundError("No session file?")
+            # move it to this program's directory
+            os.rename("scraper.session", os.path.join(tel_scrape_path, "scraper.session"))
+
         # open settings window
         self.settings = Settings_window()
         ret = self.settings.exec_()
@@ -472,7 +501,6 @@ class Main(QMainWindow):
                 # load media
                 try: self.load_media(self.scraper.media.index(int(cf["Scraper"]["media_id"])))
                 except: pass
-
             else: self.load_media(0)
         else:
             # placeholder is tiny for some reason at start so we load
@@ -571,7 +599,8 @@ class Main(QMainWindow):
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.")
             self.chnl.setText("")
-        except Exception:
+        except Exception as e:
+            raise e
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.") 
         finally:

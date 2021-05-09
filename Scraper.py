@@ -11,7 +11,7 @@ from telethon import TelegramClient
 import sqlite3
 import telethon.sync # this relieves the need to use telethon as an asyncio library
 
-tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Scraper")
+tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Tagger")
 
 class TelegramError(Exception):
     pass
@@ -99,7 +99,7 @@ class Scraper:
         # connect to telegram
         #   note, validation takes a second so we keep the client open
         #   as long as the class is alive (closed on exit)
-        self.client = TelegramClient('scraper', api_id, api_hash, session=os.path.join(tel_scrape_path, "scraper.session"))
+        self.client = TelegramClient(os.path.join(tel_scrape_path, "scraper.session"), api_id, api_hash)
         # authenticate (will use input if necessary)
         self.client.start()
         self.chnl = self.client.get_entity(chnl)
