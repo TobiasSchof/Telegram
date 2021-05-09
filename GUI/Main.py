@@ -10,8 +10,8 @@ import sys, os, math
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout, 
     QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider, QInputDialog, QMessageBox,
     QGridLayout, QCheckBox, QSpacerItem, QSizePolicy, QMenuBar, QMenu, QAction)
-from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize, QUrl
-from PyQt5.QtGui import QMovie, QIntValidator
+from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize, QUrl, QCoreApplication
+from PyQt5.QtGui import QMovie, QIntValidator, QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5 import uic
@@ -471,9 +471,18 @@ class Main(QMainWindow):
 
         # open settings window
         self.settings = Settings_window()
-        ret = self.settings.exec_()
-        # if settings weren't confirmed, close
-        if not ret: sys.exit()
+        # only need to show settings if we don't have them already
+        if not os.path.isfile(os.path.join(tel_scrape_path, "session.ini")):
+            ret = self.settings.exec_()
+            # if settings weren't confirmed, close
+            if not ret: sys.exit()
+
+        # setup menu bar
+        taggermenu = self.menuBar().addMenu("Tagger")
+
+        settings_act = QAction(QIcon(":icons/settings"), "Settings", self)
+        settings_act.triggered.connect(self.settings.exec_)
+        taggermenu.addAction(settings_act)
 
         # show GUI
         self.show()
@@ -798,5 +807,6 @@ class Main(QMainWindow):
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
+    QCoreApplication.setAttribute(Qt.AA_DontUseNativeMenuBar)
     widge = Main()
     sys.exit(app.exec_())

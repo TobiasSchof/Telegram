@@ -94,8 +94,8 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset>
-          <normaloff>edit_pencil.png</normaloff>edit_pencil.png</iconset>
+         <iconset resource="images.qrc">
+          <normaloff>:/icons/edit</normaloff>:/icons/edit</iconset>
         </property>
        </widget>
       </item>
@@ -104,7 +104,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

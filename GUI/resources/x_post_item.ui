@@ -27,13 +27,15 @@
       <string/>
      </property>
      <property name="icon">
-      <iconset>
-       <normaloff>trash_can.png</normaloff>trash_can.png</iconset>
+      <iconset resource="images.qrc">
+       <normaloff>:/icons/trash</normaloff>:/icons/trash</iconset>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
  <connections/>
 </ui>

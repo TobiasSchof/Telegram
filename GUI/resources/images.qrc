@@ -2,10 +2,9 @@
   <qresource prefix="placeholder">
     <file>no_img.jpg</file>
   </qresource>
-  <qresource prefix="edit">
-    <file>edit_pencil.png</file>
-  </qresource>
-  <qresource prefix="delete">
-    <file>trash_can.png</file>
+  <qresource prefix="icons">
+    <file alias="edit">edit_pencil.png</file>
+    <file alias="trash">trash_can.png</file>
+    <file alias="settings">setting-cog-512.png</file>
   </qresource> 
 </RCC>
