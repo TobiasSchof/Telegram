@@ -33,16 +33,10 @@ class Scraper:
         each other will be considered the same message
     """
 
-    def __init__(self, chnl, start, end, db=None, x_post_excl=[], dwnld_media=False):
+    def __init__(self, chnl, start, end, db=None, x_post_excl=[], dwnld_media=False, scrape_path=tel_scrape_path):
         """Constructor
         
-        NOTE: If using a sql database, a table "Scraper" will be created with the following collumns:
-            (Channel TINYTEXT, ID INT UNSIGNED, Media TINYTEXT, Xpost TINYTEXT, DT DATETIME, Message MEDIUMTEXT, Comment TINYTEXT)
-                Where Media is a comma separated list of the ids of any media attached to this message,
-                      xpost is the channel name for the channel from which this post was crossposted from (if any),
-                      DT is in utc
-
-            Additionally, <tagname> BOOL columns (NULLable, default value False) will be added per tag 
+        NOTE: If using a sql database, a table "Scraper" will be created. See the Readme for info on fields
 
         Args:
             chnl        = a string containing the telegram channel link (should look like t.me/example)
@@ -51,6 +45,8 @@ class Scraper:
             db          = the path of the database to use (or None for no database)
             x_post_excl = a list containing the channels to ignore crossposts from 
             dwnld_media = if True, will download the media to a permanent file (if False, will use temp file)
+            scrape_path = the directory that this scraper should work out of
+                            (this is where media will be saved, the session will be saved, etc.)
         """
 
         # validate input
@@ -67,6 +63,12 @@ class Scraper:
         if type(x_post_excl) is not list: x_post_excl = [x_post_excl]
         if len([chnl for chnl in x_post_excl if not chnl.startswith("t.me/")]) > 0:
             raise ValueError("All excluded channels should be the full username beginning with t.me/")
+
+        # check path
+        if not os.path.isdir(scrape_path):
+            try: os.mkdir(scrape_path)
+            except: raise FileNotFoundError("Error creating path '{}'. Every directory except last must already exist.".format(scrape_path))
+        self.scrape_path = scrape_path
 
         # setup cleanup method
         register(self._cleanup)
@@ -92,14 +94,14 @@ class Scraper:
 
         # get info for telegram client
         cf = ConfigParser()
-        cf.read(os.path.join(tel_scrape_path, ".Telegram_info.ini"))
+        cf.read(os.path.join(self.scrape_path, ".Telegram_info.ini"))
         api_id = cf.getint("Thesis", "api_id")
         api_hash = cf.get("Thesis", "api_hash")
 
         # connect to telegram
         #   note, validation takes a second so we keep the client open
         #   as long as the class is alive (closed on exit)
-        self.client = TelegramClient(os.path.join(tel_scrape_path, "scraper.session"), api_id, api_hash)
+        self.client = TelegramClient(os.path.join(self.scrape_path, "scraper.session"), api_id, api_hash)
         # authenticate (will use input if necessary)
         self.client.start()
         self.chnl = self.client.get_entity(chnl)
@@ -123,7 +125,7 @@ class Scraper:
                 # if table doesn't exist, make it and move on
                 if str(e).startswith("no such table"):
                     # make Scraper table
-                    self.db.execute("CREATE TABLE Scraper (Channel TINYTEXT, ID INT UNSIGNED, Media TINYTEXT, xpost TINYTEXT, DT DATETIME, message MEDIUMTEXT, comment TINYTEXT)")
+                    self.db.execute("CREATE TABLE Scraper (Channel TINYTEXT, ID INT UNSIGNED, Media TINYTEXT, xpost TINYTEXT, DT DATETIME, message MEDIUMTEXT, Silent BOOL, Legacy BOOL, Edt_hid BOOL, Pinned BOOL, Bot_id INT UNSIGNED, Reply_to TINYTEXT, Views INT UNSIGNED, Forwards INT UNSIGNED, Replies INT UNSIGNED, edt_dt DATETIME, comment TINYTEXT)")
                     self.db.commit()
                 # if it was a different error, throw it
                 else: raise e
@@ -223,7 +225,7 @@ class Scraper:
             raise ValueError("id must be an integer")
 
         # check if media is already downloaded. Use glob because we don't know file type
-        files = glob(os.path.join(tel_scrape_path, self.chnl.username, "{}.*".format(id)))
+        files = glob(os.path.join(self.scrape_path, self.chnl.username, "{}.*".format(id)))
         # if glob found multiple possible files, raise an error
         if len(files) > 1:
             msg = "Found multiple possible files: "+("{}"*len(files)).format(*files)
@@ -241,12 +243,12 @@ class Scraper:
 
         # download media
         if self.dwnld_media:
-            dir = os.path.join(tel_scrape_path, self.chnl.username)
+            dir = os.path.join(self.scrape_path, self.chnl.username)
             if not os.path.isdir(dir): os.mkdir(dir)
             fname = os.path.join(dir, str(id))
             self.client.download_media(msg, fname)
             # find actual file name (with extension)
-            files = glob(os.path.join(tel_scrape_path, self.chnl.username, "{}.*".format(id)))
+            files = glob(os.path.join(self.scrape_path, self.chnl.username, "{}.*".format(id)))
             # if glob found multiple possible files, raise an error
             if len(files) > 1:
                 msg = "Found multiple possible files: "+("{}"*len(files)).format(*files)
@@ -304,15 +306,21 @@ class Scraper:
             elif len(msg) == 0:
                 self.load_msg_from_telegram(id, expand = expand)
                 # write information to database
-                self.db.execute("INSERT INTO Scraper (Channel, ID, Media, Xpost, DT, Message, Comment) VALUES (?, ?, ?, ?, ?, ?, ?)", (self.chnl.username, 
-                            self.msg_id, ((",{}"*len(self.media))+",").format(*self.media),
-                            self.msg, "" if self.fwd is None else self.fwd, self.msg_date, ""))
+                self.db.execute("INSERT INTO Scraper (Channel, ID, Media, Xpost, DT, Message, Silent, Legacy, Edt_hid, Pinned, Bot_id, Reply_to, Views, Forwards, Replies, edt_dt, Comment) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (self.chnl.username, self.msg_id,
+                            ((",{}"*len(self.media))+",").format(*self.media),
+                            "" if self.fwd is None else self.fwd, self.msg_date,
+                            self.msg, self.silent, self.legacy,
+                            self.edit_hide, self.pinned, self.bot_id,
+                            "{},{}".format(self.reply_channel, self.reply_msg_id)),
+                            self.views, self.fwds, self.replies,
+                            self.edit_date, self.comment)
                 self.db.commit()
                 self.load_tags()
                 return
             # if one, just use that entry
 
-        dt = datetime.fromisoformat(msg[0][5])
+        dt = datetime.fromisoformat(msg[0][4])
         # check date range
         if expand:
             if dt > self.end:
@@ -324,7 +332,7 @@ class Scraper:
                 raise EndRange("Message {} out of date range.".format(id))
 
         # check for crosspost to be excluded
-        fwd = msg[0][4].lower()
+        fwd = msg[0][3].lower()
         if fwd.lower() in self.excl:
             msg = "Crosspost from {}".format(fwd)
             raise XPostThrowaway(msg)
@@ -332,10 +340,22 @@ class Scraper:
         # if we didn't raise an exception, load message from database
         self.msg_id = msg[0][1]
         self.media = [int(id) for id in msg[0][2].split(",") if id != ""]
-        self.msg = msg[0][3]
+        self.msg = msg[0][5]
         self.fwd = fwd
         self.msg_dat = dt
-        self.comment = msg[0][6]
+        self.silent = msg[0][6]
+        self.legacy = msg[0][7]
+        self.edit_hide = msg[0][8]
+        self.pinned = msg[0][9]
+        self.bot_id = msg[0][10]
+        reply_info = msg[0][11].split(",")
+        self.reply_channel = None if reply_info[0].lower() == "none" else reply_info[0]
+        self.reply_msg_id = None if reply_info[1].lower() == "none" else int(reply_info[1])
+        self.views = msg[0][12]
+        self.fwds = msg[0][13]
+        self.replies = msg[0][14]
+        self.edit_date = datetime.fromisoformat(msg[0][15])
+        self.comment = msg[0][16]
         # keep track of comment when it was loaded so we can tell if a commit to the database is necessary
         self.__loaded_comment = msg[0][6]
         self.load_tags()
@@ -368,17 +388,6 @@ class Scraper:
             if srch_msg.date > self.end or srch_msg.date < self.start:
                 raise EndRange("Message {} out of date range.".format(id))
 
-        # find channel this was forwarded from if it was a forward
-        if srch_msg.forward is None:
-            self.fwd = None
-        else:
-            fwd = srch_msg.forward.from_id.channel_id
-            fwd = "t.me/"+self.client.get_entity(fwd).username
-            if fwd.lower() in self.excl:
-                msg = "Crosspost from {}".format(fwd)
-                raise XPostThrowaway(msg)
-            self.fwd = fwd
-
         # list to store ids for media
         self.media = []
 
@@ -394,10 +403,41 @@ class Scraper:
                 if old_msg.message != "": break
                 prev_msg = self.client.get_messages(self.chnl, ids=old_msg.id-1)
 
+        # find channel this was forwarded from if it was a forward
+        if srch_msg.forward is None:
+            self.fwd = None
+        else:
+            fwd = srch_msg.forward.from_id.channel_id
+            fwd = "t.me/"+self.client.get_entity(fwd).username
+            if fwd.lower() in self.excl:
+                msg = "Crosspost from {}".format(fwd)
+                raise XPostThrowaway(msg)
+            self.fwd = fwd
+
+        # find channel this is a reply to if was a reply
+        if srch_msg.reply_to is None:
+            self.reply_channel = None
+            self.reply_msg_id = None
+        else:
+            if srch_msg.reply_to.reply_to_peer_id is None:
+                self.reply_channel = None
+            else:
+                self.reply_channel = "t.me/"+self.client.get_entity(srch_msg.reply_to.reply_to_peer_id).username
+            self.reply_msg_id = srch_msg.reply_to.reply_to_msg_id
+
         # set our instance variables
-        self.msg      = old_msg.message
-        self.msg_id   = old_msg.id
-        self.msg_date = old_msg.date
+        self.msg       = old_msg.message
+        self.silent    = old_msg.silent
+        self.legacy    = old_msg.legacy
+        self.edit_hide = old_msg.edit_hide
+        self.pinned    = old_msg.pinned
+        self.bot_id    = old_msg.via_bot_id
+        self.views     = old_msg.views
+        self.fwds      = old_msg.forwards
+        self.replies   = old_msg.replies
+        self.edit_date = old_msg.edit_date
+        self.msg_id    = old_msg.id
+        self.msg_date  = old_msg.date
         if old_msg.media is not None: self.media.insert(0, old_msg.id)
         self.comment = ""
 
