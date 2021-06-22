@@ -1,7 +1,7 @@
 from Scraper import Scraper
 from datetime import datetime, timedelta, timezone
 from configparser import ConfigParser
-import os
+import os, sys
 
 working_dir = os.path.join(os.path.expanduser("~"), "Documents", "Thesis")
 
@@ -26,15 +26,18 @@ def download_chnl(chnl, start, end, db=os.path.join(working_dir, "Thesis.db"), v
     scraper = Scraper(chnl=chnl, start=start, end=end, db=db, dwnld_media=True)
 
     for msg in scraper:
-        sys.stdout.write(u"\u001b[2K")
-        sys.stdout.write("\rFetching message {}".format(scraper.msg_id))
-        sys.stdout.flush()
-        for media_id in scraper.media:
-            sys.stdout.write(u"\u001b[2K")
-            sys.stdout.write("\rFetching message {}  --  media for message {}".format(media_id, scraper.msg_id))
+        if verbose:
+            sys.stdout.write(u"\u001b[2J")
+            sys.stdout.write("\rFetching message {}".format(scraper.msg_id))
             sys.stdout.flush()
+        for media_id in scraper.media:
+            if verbose:
+                sys.stdout.write(u"\u001b[2J")
+                sys.stdout.write("\rFetching message {}  --  media for message {}".format(media_id, scraper.msg_id))
+                sys.stdout.flush()
             scraper.get_media(media_id)
-    
-    sys.stdout.write(u"\u001b[2K")
-    sys.stdout.write("\rDone.\n")
-    sys.stdout.flush()
+
+    if verbose:
+        sys.stdout.write(u"\u001b[2J")
+        sys.stdout.write("\rDone.\n")
+        sys.stdout.flush()
