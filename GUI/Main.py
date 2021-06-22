@@ -31,7 +31,7 @@ utcoffset = -3
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
 
 # Telegram Scraper folder
-tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Tagger")
+tel_scrape_path = os.path.join(os.path.expanduser("~"), "Documents", "Thesis")
 
 if not os.path.isdir(tel_scrape_path):
     os.mkdir(tel_scrape_path)

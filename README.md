@@ -7,7 +7,6 @@ Dependencies:
   PyQt5    (For GUI)
   googletrans alpha [pip install googletrans==3.1.0a0] (For translations)
 
-
 SQLite database:
 
 Table "Scraper" will contain the following fields:

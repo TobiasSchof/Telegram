@@ -11,7 +11,7 @@ from telethon import TelegramClient
 import sqlite3
 import telethon.sync # this relieves the need to use telethon as an asyncio library
 
-tel_scrape_path = os.path.join(os.path.expanduser("~"), "Telegram Tagger")
+tel_scrape_path = os.path.join(os.path.expanduser("~"), "Documents", "Thesis")
 
 class TelegramError(Exception):
     pass
