@@ -162,10 +162,11 @@ class Scraper:
                 return self.get_msg_by_id(next_id, expand=False)
             except EndRange as e:
                 # in this case, the message is missing. But it seems that sometimes,
-                #   that doesn't mean we're done so try for another 15 messages
+                #   that doesn't mean we're done so try for another 30 messages
+                #   (ran into a 20 message break on nexta_live)
                 if str(e).startswith("No message with id"):
                     id = next_id + 1
-                    while id - next_id <= 15:
+                    while id - next_id <= 30:
                         try:
                             msg = self.get_msg_by_id(id, expand=False)
                             return msg
@@ -191,11 +192,12 @@ class Scraper:
             try:
                 return self.get_msg_by_id(prev_id, expand=False)
             except EndRange as e:
-                 # in this case, the message is missing. But it seems that sometimes,
-                #   that doesn't mean we're done so try for another 15 messages
+                # in this case, the message is missing. But it seems that sometimes,
+                #   that doesn't mean we're done so try for another 30 messages
+                #   (ran into a 20 message break on nexta_live)
                 if str(e).startswith("No message with id"):
                     id = prev_id - 1
-                    while prev_id - id <= 15:
+                    while prev_id - id <= 30:
                         try:
                             msg = self.get_msg_by_id(id, expand=False)
                             return msg
@@ -306,15 +308,15 @@ class Scraper:
             elif len(msg) == 0:
                 self.load_msg_from_telegram(id, expand = expand)
                 # write information to database
-                self.db.execute("INSERT INTO Scraper (Channel, ID, Media, Xpost, DT, Message, Silent, Legacy, Edt_hid, Pinned, Bot_id, Reply_to, Views, Forwards, Replies, edt_dt, Comment) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                self.db.execute("INSERT INTO Scraper (Channel, ID, Media, Xpost, DT, Message, Silent, Legacy, Edt_hid, Pinned, Bot_id, Reply_to, Views, Forwards, Replies, edt_dt, Comment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             (self.chnl.username, self.msg_id,
                             ((",{}"*len(self.media))+",").format(*self.media),
                             "" if self.fwd is None else self.fwd, self.msg_date,
                             self.msg, self.silent, self.legacy,
                             self.edit_hide, self.pinned, self.bot_id,
-                            "{},{}".format(self.reply_channel, self.reply_msg_id)),
+                            "{},{}".format(self.reply_channel, self.reply_msg_id),
                             self.views, self.fwds, self.replies,
-                            self.edit_date, self.comment)
+                            self.edit_date, self.comment))
                 self.db.commit()
                 self.load_tags()
                 return
@@ -354,7 +356,7 @@ class Scraper:
         self.views = msg[0][12]
         self.fwds = msg[0][13]
         self.replies = msg[0][14]
-        self.edit_date = datetime.fromisoformat(msg[0][15])
+        self.edit_date = datetime.fromisoformat(msg[0][15]) if msg[0][15] is not None else None
         self.comment = msg[0][16]
         # keep track of comment when it was loaded so we can tell if a commit to the database is necessary
         self.__loaded_comment = msg[0][6]
@@ -408,11 +410,15 @@ class Scraper:
             self.fwd = None
         else:
             fwd = srch_msg.forward.from_id.channel_id
-            fwd = "t.me/"+self.client.get_entity(fwd).username
-            if fwd.lower() in self.excl:
-                msg = "Crosspost from {}".format(fwd)
-                raise XPostThrowaway(msg)
-            self.fwd = fwd
+            try:
+                fwd = "t.me/"+self.client.get_entity(fwd).username
+                if fwd.lower() in self.excl:
+                    msg = "Crosspost from {}".format(fwd)
+                    raise XPostThrowaway(msg)
+                self.fwd = fwd
+            except telethon.errors.rpcerrorlist.ChannelPrivateError:
+                fwd = None
+                self.fwd = None
 
         # find channel this is a reply to if was a reply
         if srch_msg.reply_to is None:
@@ -422,7 +428,10 @@ class Scraper:
             if srch_msg.reply_to.reply_to_peer_id is None:
                 self.reply_channel = None
             else:
-                self.reply_channel = "t.me/"+self.client.get_entity(srch_msg.reply_to.reply_to_peer_id).username
+                try:
+                    self.reply_channel = "t.me/"+self.client.get_entity(srch_msg.reply_to.reply_to_peer_id).username
+                except telethon.errors.rpcerrorlist.ChannelPrivateError:
+                    self.reply_channel = None
             self.reply_msg_id = srch_msg.reply_to.reply_to_msg_id
 
         # set our instance variables
