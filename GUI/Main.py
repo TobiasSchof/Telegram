@@ -609,7 +609,6 @@ class Main(QMainWindow):
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.")
             self.chnl.setText("")
         except Exception as e:
-            raise e
             self.chnl.setStyleSheet("background-color:red;")
             self.chnl.setToolTip("No messages for this channel in\nthe given date range.") 
         finally:

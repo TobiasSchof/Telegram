@@ -489,7 +489,7 @@ class Scraper:
         """Load tags from the database"""
 
         # get the name of all tags
-        all_tags = self.db.execute("PRAGMA table_info(Scraper)").fetchall()[7:]
+        all_tags = self.db.execute("PRAGMA table_info(Scraper)").fetchall()[17:]
         # get the entry for this message in the database
         entry = self.db.execute("SELECT * FROM Scraper WHERE Channel = ? AND ID = ?", (self.chnl.username, str(self.msg_id))).fetchall()
         # make sure there's exactly one entry
@@ -543,7 +543,7 @@ class Scraper:
 
         # edit table with differences
         for tag in edits:
-            cmd = "UPDATE Scraper SET {} = ? WHERE CHANNEL = ? AND ID = ?".format(tag)
+            cmd = "UPDATE Scraper SET '{}' = ? WHERE CHANNEL = ? AND ID = ?".format(tag)
             self.db.execute(cmd, (self.tags[tag], self.chnl.username, self.msg_id))
         
         # commit change
