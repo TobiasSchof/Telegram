@@ -5,7 +5,7 @@ This project is to create a tool to collect Telegrams from a collection of Teleg
 Dependencies:
   Telethon (For python Telegram API)
   PyQt5    (For GUI)
-  googletrans alpha [pip install googletrans==3.1.0a0] (For translations)
+  To use GUI Google cloud translation API is needed
 
 SQLite database:
 

@@ -15,7 +15,7 @@ from PyQt5.QtGui import QMovie, QIntValidator, QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5 import uic
-from googletrans import Translator
+from google.cloud import translate_v2 as translate
 from telethon import TelegramClient
 
 # project files
@@ -386,7 +386,7 @@ class Main(QMainWindow):
         # instantiate scraper
         self.scraper = None
         # instantiate google translate helper
-        self.translator = Translator()
+        self.translator = translate.Client()
 
         # add Qlabels to scroll areas for text
         self.orig_msg = QLabel("No messages for this channel in this date range.")
@@ -648,8 +648,8 @@ class Main(QMainWindow):
 
         # and try to translate
         try:
-            trans = self.translator.translate(self.scraper.msg, src="ru")
-            self.trans_msg.setText(trans.text)
+            trans = self.translator.translate(self.scraper.msg, target_language='en', format_="text")
+            self.trans_msg.setText(trans["translatedText"])
         except Exception:
             self.trans_msg.setText("Error occurred with translation. Check internet connection.")
 
