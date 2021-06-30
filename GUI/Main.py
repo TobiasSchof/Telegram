@@ -716,7 +716,7 @@ class Main(QMainWindow):
         self.date.setText(f"{self.scraper.msg_dat:%B %d, %Y}")
 
         # set xpost if this is a crosspost
-        self.xpost.setText(self.scraper.fwd if (self.scraper.fwd is not None and self.scraper != "") else "---")
+        self.xpost.setText(self.scraper.fwd if (self.scraper.fwd is not None and len(self.scraper.fwd) > 0) else "---")
 
         # set reply link if this is a crosspost
         self.reply.setText(f'<a href="t.me/{self.scraper.reply_channel}/{self.scraper.reply_msg_id}>{self.scraper.reply_channel}</a>' if self.scraper.reply_channel is not None else "---")
