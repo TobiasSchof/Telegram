@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <layout class="QGridLayout" name="Main_layout" rowstretch="0,0,0,0,0,0,10,10,5" columnstretch="0,0,10" rowminimumheight="0,0,0,0,0,0,0,0,0">
+     <layout class="QGridLayout" name="Main_layout" rowstretch="0,0,0,0,0,0,10,10,5" columnstretch="1,1,10" rowminimumheight="0,0,0,0,0,0,0,0,0">
       <property name="leftMargin">
        <number>10</number>
       </property>
