@@ -76,6 +76,15 @@ class Settings_window(QDialog):
             cf = ConfigParser()
             cf.read(os.path.join(tel_scrape_path, "session.ini"))
 
+            # set channel name
+            self.chnl.setText("t.me/"+cf["Scraper"]["chnl"])
+
+            # set date range
+            start = datetime.fromisoformat(cf["Scraper"]["start"])
+            end = datetime.fromisoformat(cf["Scraper"]["end"])
+            self.date_from.setDateTime(start)
+            self.date_to.setDateTime(end)
+
             # set database location
             self.db_path.setText(cf["Settings"]["db_loc"])
 
@@ -400,18 +409,6 @@ class Main(QMainWindow):
         self.trans_msg.setMargin(10)
         self.trans_scroll.setWidget(self.trans_msg)
 
-        # set end/start date range as the current time/date
-        dt = datetime.now().astimezone(timezone.utc)
-        dt = QDateTime.fromSecsSinceEpoch(dt.timestamp())
-        dt = dt.toTimeZone(QTimeZone(60*60*3))
-        self.date_from.setDateTime(dt)
-        self.date_to.setDateTime(dt)
-
-        # edits to channel or date range will create a new scraper
-        self.chnl.editingFinished.connect(self.edit_scraper)
-        self.date_from.dateTimeChanged.connect(self.edit_scraper)
-        self.date_to.dateTimeChanged.connect(self.edit_scraper)
-
         # connect next and prev buttons for media
         self.prev_media_btn.clicked.connect(lambda _: self.load_media(self.media_idx-1))
         self.next_media_btn.clicked.connect(lambda _: self.load_media(self.media_idx+1))
@@ -423,7 +420,7 @@ class Main(QMainWindow):
         self.prev_msg_btn.setEnabled(False)
         self.next_msg_btn.setEnabled(False)
 
-        # connect channel id field
+        # connect msg id field
         self.msg_id.setValidator(QIntValidator(bottom=0))
         self.msg_id.editingFinished.connect(self.jump_to_id)
 
@@ -471,17 +468,50 @@ class Main(QMainWindow):
 
         # open settings window
         self.settings = Settings_window()
-        # only need to show settings if we don't have them already
+        # only need to show settings if we don't have already
         if not os.path.isfile(os.path.join(tel_scrape_path, "session.ini")):
             ret = self.settings.exec_()
             # if settings weren't confirmed, close
             if not ret: sys.exit()
 
+            ok = False
+
+            while not ok:
+                # try to make scraper
+                try:
+                    self.make_scraper()
+                    ok = True
+                except AssertionError:
+                    err = QMessageBox()
+                    err.showMessage("\tDates invalid. Please be sure to check\nthat Start date is earlier than end date and that\nEnd date is at latest the current date.")
+                    _ = err._exec()
+                    # redisplay settings window  
+                    ret = self.settings.exec_()
+                    # if settings weren't confirmed, close
+                    if not ret: sys.exit()
+        # otherwise create a scraper
+        else:
+            ok = False
+
+            while not ok:
+                # try to make scraper
+                try:
+                    self.make_scraper()
+                    ok = True
+                except AssertionError:
+                    err = QMessageBox()
+                    err.showMessage("\tDates invalid. Please be sure to check\nthat Start date is earlier than end date and that\nEnd date is at latest the current date.")
+                    _ = err._exec()
+                    # redisplay settings window  
+                    ret = self.settings.exec_()
+                    # if settings weren't confirmed, close
+                    if not ret: sys.exit()
+
         # setup menu bar
         taggermenu = self.menuBar().addMenu("Tagger")
 
         settings_act = QAction(QIcon(":icons/settings"), "Settings", self)
-        settings_act.triggered.connect(self.settings.exec_)
+        settings_act.triggered.connect(self.open_settings)
         taggermenu.addAction(settings_act)
 
         # show GUI
@@ -492,29 +522,40 @@ class Main(QMainWindow):
             cf = ConfigParser()
             cf.read(os.path.join(tel_scrape_path, "session.ini"))
 
-            # if there's info about the scraper, load it
-            if "Scraper" in cf:
-                chnl = "t.me/"+cf["Scraper"]["chnl"]
-                start = datetime.fromisoformat(cf["Scraper"]["start"])
-                end = datetime.fromisoformat(cf["Scraper"]["end"])
-                # fill in fields
-                self.date_from.setDateTime(start)
-                self.date_to.setDateTime(end)
-                self.chnl.setText(chnl)
-                # make scraper
-                self.edit_scraper()
-                # set id
-                self.scraper.get_msg_by_id(int(cf["Scraper"]["msg_id"]))
-                # load message
-                self.load_msg()
-                # load media
-                try: self.load_media(self.scraper.media.index(int(cf["Scraper"]["media_id"])))
-                except: pass
-            else: self.load_media(0)
+            # set id
+            self.scraper.get_msg_by_id(int(cf["Scraper"]["msg_id"]))
+            # load message
+            self.load_msg()
+            # load media
+            try: self.load_media(self.scraper.media.index(int(cf["Scraper"]["media_id"])))
+            except: pass
         else:
             # placeholder is tiny for some reason at start so we load
             #   media after showing window to scale correctly
             self.load_media(0)
+
+    def open_settings(self):
+        """Open the settings window and change the scraper if necessary"""
+
+        ret = self.settings.exec_()
+        # if settings weren't confirmed, close
+        if not ret: sys.exit()
+
+        ok = False
+
+        while not ok:
+            # try to make scraper
+            try:
+                self.make_scraper()
+                ok = True
+            except AssertionError:
+                err = QMessageBox()
+                err.showMessage("\tDates invalid. Please be sure to check\nthat Start date is earlier than end date and that\nEnd date is at latest the current date.")
+                _ = err._exec()
+                # redisplay settings window  
+                ret = self.settings.exec_()
+                # if settings weren't confirmed, close
+                if not ret: sys.exit()
 
     def parse_comment(self):
         """Limits the comment box to 255 characters"""
@@ -562,35 +603,26 @@ class Main(QMainWindow):
             self.msg_id.setStyleSheet("background-color:red;")
             self.msg_id.setToolTip("ID {} is {}.".format(id, str(e).lower())) 
 
-    def edit_scraper(self):
-        """Change the channel being parsed"""
+    def make_scraper(self):
+        """Make a scraper"""
         
         # convert dates to datetimes in utc
-        start = self.date_from.dateTime()
+        start = self.settings.date_from.dateTime()
         start = datetime(year = start.date().year(), month = start.date().month(), day = start.date().day(),
             hour = start.time().hour(), minute = start.time().minute(), second = start.time().second(),
             tzinfo=timezone.utc) + timedelta(hours = utcoffset)
-        end = self.date_to.dateTime()
+        end = self.settings.date_to.dateTime()
         end = datetime(year = end.date().year(), month=end.date().month(), day=end.date().day(),
             hour = end.time().hour(), minute = end.time().minute(), second = end.time().second(),
             tzinfo=timezone.utc) + timedelta(hours = utcoffset)
         # validate dates
-        try: assert end <= datetime.now().astimezone(timezone.utc)
-        except AssertionError:
-            dt = datetime.now().astimezone(timezone.utc)
-            end = dt
-            dt = QDateTime.fromSecsSinceEpoch(dt.timestamp())
-            dt = dt.toTimeZone(QTimeZone(60*60*3))
-            self.date_to.setDateTime(dt)
-        try: assert start <= end
-        except AssertionError:
-            self.date_from.setDateTime(self.date_to.dateTime()) 
-            start = end
+        assert end <= datetime.now().astimezone(timezone.utc)
+        assert start <= end
 
         # if this describes the current scraper, do nothing
         if self.scraper is not None:
             if self.scraper.start == start and self.scraper.end == end:
-                if self.scraper.chnl.username == self.chnl.text().split("/")[-1]: return
+                if self.scraper.chnl.username == self.settings.chnl.text().split("/")[-1]: return
 
         # try to make scraper
         try: 
@@ -599,18 +631,18 @@ class Main(QMainWindow):
                 self.set_tags()
                 self.scraper._cleanup()
                 self.scraper = None
-            self.scraper = Scraper(chnl = self.chnl.text(), start = start, end = end,
+            self.scraper = Scraper(chnl = self.settings.chnl.text(), start = start, end = end,
                 db = self.settings.db_path.text(), x_post_excl = self.settings.excludes,
                 dwnld_media = self.settings.media_sv.isChecked())
-            self.chnl.setToolTip("The telegram channel to parse.")
-            self.chnl.setStyleSheet("")
+            self.orig_msg.setToolTip("")
+            self.orig_msg.setStyleSheet("")
         except ValueError:
-            self.chnl.setStyleSheet("background-color:red;")
-            self.chnl.setToolTip("No messages for this channel in\nthe given date range.")
-            self.chnl.setText("")
+            self.orig_msg.setStyleSheet("background-color:red;")
+            self.orig_msg.setToolTip("No messages for this channel in\nthe given date range.")
+            self.orig_msg.setText("")
         except Exception as e:
-            self.chnl.setStyleSheet("background-color:red;")
-            self.chnl.setToolTip("No messages for this channel in\nthe given date range.") 
+            self.orig_msg.setStyleSheet("background-color:red;")
+            self.orig_msg.setToolTip("No messages for this channel in\nthe given date range.") 
         finally:
             if self.scraper is None:
                 self.msg_id.setEnabled(False)
@@ -641,6 +673,9 @@ class Main(QMainWindow):
             self.msg_id.setText("")
             self.prev_msg_btn.setEnabled(False)
             self.next_msg_btn.setEnabled(False)
+            self.date.setText("---")
+            self.xpost.setText("---")
+            self.reply.setText("---")
             return
 
         # otherwise set original text to message text
@@ -676,6 +711,15 @@ class Main(QMainWindow):
         # reset style sheet to get rid of any errors previously indicated
         self.msg_id.setStyleSheet("")
         self.msg_id.setToolTip("")
+
+        # set date
+        self.date.setText(f"{self.msg_dat:%B %d, %Y}")
+
+        # set xpost if this is a crosspost
+        self.xpost.setText(self.fwd if self.fwd is not None else "---")
+
+        # set reply link if this is a crosspost
+        self.reply.setText(f'<a href="t.me/{self.reply_channel}/{self.reply_msg_id}>{self.reply_channel}</a>' if self.reply_channel is not None else "---")
 
         # load comment field
         try: self.comment_box.setPlainText(self.scraper.comment)

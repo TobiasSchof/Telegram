@@ -558,8 +558,10 @@ class Scraper:
         except: pass
 
         # disconnect from client so session db closes
-        self.client.disconnect()
-        self.client = None
+        try:
+            self.client.disconnect()
+            self.client = None
+        except: pass
 
         if not self.db is None:
             try:
