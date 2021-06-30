@@ -713,13 +713,13 @@ class Main(QMainWindow):
         self.msg_id.setToolTip("")
 
         # set date
-        self.date.setText(f"{self.msg_dat:%B %d, %Y}")
+        self.date.setText(f"{self.scraper.msg_dat:%B %d, %Y}")
 
         # set xpost if this is a crosspost
-        self.xpost.setText(self.fwd if self.fwd is not None else "---")
+        self.xpost.setText(self.scraper.fwd if self.scraper.fwd is not None else "---")
 
         # set reply link if this is a crosspost
-        self.reply.setText(f'<a href="t.me/{self.reply_channel}/{self.reply_msg_id}>{self.reply_channel}</a>' if self.reply_channel is not None else "---")
+        self.reply.setText(f'<a href="t.me/{self.scraper.reply_channel}/{self.scraper.reply_msg_id}>{self.scraper.reply_channel}</a>' if self.scraper.reply_channel is not None else "---")
 
         # load comment field
         try: self.comment_box.setPlainText(self.scraper.comment)
