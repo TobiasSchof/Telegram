@@ -325,6 +325,7 @@ class Tag_Area(QWidget):
             # make checkbox with correct status
             chk_bx = QCheckBox(tag)
             chk_bx.setChecked(self.main.scraper.tags[tag])
+            chk_bx.toggled.connect(lambda : print("yay bandaids?"))
             # figure out how many column units this tag should take up (factoring in spacing)
             col_span = max(1, math.ceil((chk_bx.sizeHint().width()) / col_u))
             if col_span > 2:
