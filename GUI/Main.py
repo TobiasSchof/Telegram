@@ -320,24 +320,25 @@ class Tag_Area(QWidget):
         # set spacing to a known number
         new_layout.setHorizontalSpacing(10)
 
+        self.chkboxs = []
         # iterate through tags, adding them to layout
         for tag in self.main.scraper.tags:
             # make checkbox with correct status
-            chk_bx = QCheckBox(tag)
-            chk_bx.setChecked(self.main.scraper.tags[tag])
-            chk_bx.toggled.connect(lambda : print("yay bandaids?"))
+            self.chkboxs.append(QCheckBox(tag))
+            self.chkboxs[-1].setChecked(self.main.scraper.tags[tag])
+            #self.chkboxs[-1].toggled.connect(lambda : print("yay bandaids?"))
             # figure out how many column units this tag should take up (factoring in spacing)
-            col_span = max(1, math.ceil((chk_bx.sizeHint().width()) / col_u))
+            col_span = max(1, math.ceil((self.chkboxs[-1].sizeHint().width()) / col_u))
             if col_span > 2:
                 # check if with spacing, we fit in one fewer column
-                if chk_bx.sizeHint().width() <= ((col_span - 1) * col_u + (col_span - 2) * 10):
+                if self.chkboxs[-1].sizeHint().width() <= ((col_span - 1) * col_u + (col_span - 2) * 10):
                     col_span -= 1
             # decide if column span should push this tag to a new row
             if col_span + column > 5 and column != 0:
                 column = 0
                 row += 1
             # add tag
-            new_layout.addWidget(chk_bx, row, column, 1, col_span)
+            new_layout.addWidget(self.chkboxs[-1], row, column, 1, col_span)
             # calculate row/column start for next tag
             column = (min(column + col_span, 5)) % 5
             row = row + 1 if column == 0 else row
