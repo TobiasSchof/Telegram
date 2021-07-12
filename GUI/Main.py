@@ -320,6 +320,9 @@ class Tag_Area(QWidget):
         # set spacing to a known number
         new_layout.setHorizontalSpacing(10)
 
+        for tg in self.chkboxs:
+            tg.setParent(None)
+
         self.chkboxs = []
         # iterate through tags, adding them to layout
         for tag in self.main.scraper.tags:
