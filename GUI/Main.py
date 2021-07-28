@@ -800,6 +800,8 @@ class Main(QMainWindow):
             self.date.setText("---")
             self.xpost.setText("---")
             self.reply.setText("---")
+            self.load_media("clear")
+            self.tag_area.setup(clear = True)
             return
 
         # clear messages if there's no valid message in filter
