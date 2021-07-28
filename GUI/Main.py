@@ -248,7 +248,7 @@ class Filter_window(QDialog):
             return
 
         # otherwise, delete the tags that need to be deleted
-        for nm, widg in self.tag_widgs.items():
+        for nm, widg in self.tag_widgs.copy().items():
             if nm not in self.main.scraper.tags:
                 _ = self.tag_widgs.pop(nm)
                 widg.setParent(None)
@@ -291,7 +291,7 @@ class Filter_window(QDialog):
             return ret
         # otherwise, reset widgets
         else:
-            for tag, widg in self.tag_widgs.items():
+            for tag, widg in self.tag_widgs.copy().items():
                 _ = self.tag_widgs.pop(tag)
                 widg.setParent(None)
             for tag, val in tags.items():
