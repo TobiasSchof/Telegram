@@ -9,9 +9,9 @@ import sys, os, math
 # installs
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout, 
     QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider, QInputDialog, QMessageBox,
-    QGridLayout, QCheckBox, QAction, QScrollArea, QComboBox, QPushButton)
+    QGridLayout, QCheckBox, QAction, QScrollArea, QComboBox, QPushButton, QSpacerItem)
 from PyQt5.QtCore import Qt, QSize, QUrl, QCoreApplication
-from PyQt5.QtGui import QMovie, QIntValidator, QIcon
+from PyQt5.QtGui import QMovie, QIntValidator, QIcon, QSizePolicy
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5 import uic
@@ -224,6 +224,7 @@ class Filter_window(QDialog):
         self.add_section_tag = QComboBox()
         self.add_section_btn = QPushButton("add")
         self.add_section.layout().addWidget(self.add_section_tag)
+        self.add_section.layout().addWidget(QSpacerItem(20, 40, QSizePolicy.minimum, QSizePolicy.Expanding))
         self.add_section.layout().addWidget(self.add_section_btn)
 
         self.scroll_area.layout().addWidget(self.add_section)
