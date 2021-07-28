@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QLabel" name="tag_str">
+     <property name="text">
+      <string>I'm a tag!</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="tag_val">
+     <item>
+      <property name="text">
+       <string>True</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>False</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="trash">
+     <property name="text">
+      <string>...</string>
+     </property>
+     <property name="icon">
+      <iconset resource="images.qrc">
+       <normaloff>:/icons/trash</normaloff>:/icons/trash</iconset>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="images.qrc"/>
+ </resources>
+ <connections/>
+</ui>

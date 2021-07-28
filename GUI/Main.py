@@ -9,8 +9,8 @@ import sys, os, math
 # installs
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout, QHBoxLayout, 
     QGroupBox, QLabel, QFileDialog, QToolButton, QLineEdit, QStyle, QSlider, QInputDialog, QMessageBox,
-    QGridLayout, QCheckBox, QSpacerItem, QSizePolicy, QMenuBar, QMenu, QAction)
-from PyQt5.QtCore import Qt, QDateTime, QTimeZone, QSize, QUrl, QCoreApplication
+    QGridLayout, QCheckBox, QAction, QScrollArea, QComboBox)
+from PyQt5.QtCore import Qt, QSize, QUrl, QCoreApplication
 from PyQt5.QtGui import QMovie, QIntValidator, QIcon
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -212,14 +212,47 @@ class Filter_window(QDialog):
 
         # hold filter tags
         self.tags = {}
+        # hold tag widgets
+        self.tag_widgs = {}
+
+        # set up scroll area
+        self.scroll_area = self.findChild(QScrollArea, "tag_area")
+        self.scroll_area.setLayout(QVBoxLayout())
+
+        self.add_section_layout = QHBoxLayout()
+        self.add_section_tag = QComboBox()
+        self.add_section_btn = QToolButton("+")
+        self.add_section_layout.addWidget(self.add_section_tag)
+        self.add_section_btn.addWidget(self.add_section_btn)
+
+        self.scroll_area.layout().addWidget(self.add_section_layout)
 
         # populate self
         self.set_tags()
 
-    def set_tags(self):
+    def parse_tags(self):
         """A method to setup the tag box"""
 
-        print("ok")
+        # if there's no scraper, erase the filter
+        if self.main.scraper is None:
+            self.tags = {}
+            for nm, widg in self.tag_widgs.items():
+                widg.setParent(None)
+            self.tag_widgs = {}
+            return
+
+        # otherwise, delete the tags that need to be deleted
+        for nm, val in self.tags.items():
+            _ = self.tags.pop(nm)
+            widg = self.tag_widgs.pop(nm)
+            widg.setParent(None)
+
+
+    def add_tag(self):
+        """Method to add a tag"""
+
+        print("add")
+
 
 class Media_Player(QWidget):
     """A widget to create a media player
