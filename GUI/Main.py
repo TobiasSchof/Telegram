@@ -461,9 +461,11 @@ class Tag_Area(QWidget):
                 # calculate row/column start for next tag
                 column = (min(column + col_span, 5)) % 5
                 row = row + 1 if column == 0 else row
+        else:
+            self.setEnabled(False)
 
-            # add add button
-            new_layout.addWidget(self.add_tag_btn, row, column)
+        # add add button
+        new_layout.addWidget(self.add_tag_btn, row, column)
 
         # set old layout to temporary widget to re-parent it
         QWidget().setLayout(self.layout())
