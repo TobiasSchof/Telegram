@@ -302,6 +302,11 @@ class Filter_window(QDialog):
                 self.tag_widgs[tag].trash.clicked.connect(partial(self.remove_filter, tag))
                 self.filters.layout().insertWidget(0, self.tag_widgs[tag]) 
 
+    def get_filters(self):
+        """Returns a dictionary with filter"""
+
+        return {tag:bool(widg.tag_val.getCurrentIndex()) for tag, widg in self.tag_widgs.itesm()}
+
 class Media_Player(QWidget):
     """A widget to create a media player
     
@@ -629,7 +634,7 @@ class Main(QMainWindow):
         self.filter = Filter_window(main_window = self)
 
         filter_act = QAction(QIcon(":icons/filter"), "Filters", self)
-        filter_act.triggered.connect(self.open_filter)
+        filter_act.triggered.connect(self.filter.exec_)
         taggermenu.addAction(filter_act)
 
         # show GUI
@@ -651,11 +656,6 @@ class Main(QMainWindow):
             # placeholder is tiny for some reason at start so we load
             #   media after showing window to scale correctly
             self.load_media(0)
-
-    def open_filter(self):
-        """Method to open the window to change filters"""
-
-        self.filter.exec_()
 
     def open_settings(self):
         """Open the settings window and change the scraper if necessary"""

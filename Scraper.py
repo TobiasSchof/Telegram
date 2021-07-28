@@ -144,10 +144,13 @@ class Scraper:
             except EndRange:
                 raise EndRange("No messages that aren't crossposts form the listed channels in the date range.")
 
-    def next(self):
+    def next(self, filter = None):
         """Returns the next telegram in the date range
             (Will throw an error if this is the last telegram in the date range)
         """
+
+        if filter is not None and self.db is None:
+            raise ValueError("Filters can only be used with a database.")
 
         # check if id should be incremented from message or media
         if len(self.media) > 0:
@@ -159,7 +162,13 @@ class Scraper:
         #   or EndRange is thrown
         while True:
             try:
-                return self.get_msg_by_id(next_id, expand=False)
+                msg = self.get_msg_by_id(next_id, expand=False)
+                # check filter
+                if filter is not None:
+                    for tag, val in filter.items():
+                        if tag in self.tags and self.tags[tag] != val:
+                            raise XPostThrowaway()
+                return msg
             except EndRange as e:
                 # in this case, the message is missing. But it seems that sometimes,
                 #   that doesn't mean we're done so try for another 30 messages
@@ -168,7 +177,12 @@ class Scraper:
                     id = next_id + 1
                     while id - next_id <= 30:
                         try:
-                            msg = self.get_msg_by_id(id, expand=False)
+                            msg = self.get_msg_by_id(next_id, expand=False)
+                            # check filter
+                            if filter is not None:
+                                for tag, val in filter.items():
+                                    if tag in self.tags and self.tags[tag] != val:
+                                        raise XPostThrowaway()
                             return msg
                         except: pass
                         id += 1
@@ -179,10 +193,13 @@ class Scraper:
                     raise EndRange("Already at end of date range.")
             except XPostThrowaway: next_id += 1
         
-    def prev(self):
+    def prev(self, filter = None):
         """Returns the previous telegram in the date range
             (Will throw an error if this is the first telegram in the date range)
         """
+
+        if filter is not None and self.db is None:
+            raise ValueError("Filters can only be used with a database.")
 
         prev_id = self.msg_id - 1
 
@@ -190,7 +207,13 @@ class Scraper:
         #   or EndRange is thrown
         while True:
             try:
-                return self.get_msg_by_id(prev_id, expand=False)
+                msg = self.get_msg_by_id(prev_id, expand=False)
+                # check filter
+                if filter is not None:
+                    for tag, val in filter.items():
+                        if tag in self.tags and self.tags[tag] != val:
+                            raise XPostThrowaway()
+                return msg
             except EndRange as e:
                 # in this case, the message is missing. But it seems that sometimes,
                 #   that doesn't mean we're done so try for another 30 messages
@@ -199,7 +222,12 @@ class Scraper:
                     id = prev_id - 1
                     while prev_id - id <= 30:
                         try:
-                            msg = self.get_msg_by_id(id, expand=False)
+                            msg = self.get_msg_by_id(prev_id, expand=False)
+                            # check filter
+                            if filter is not None:
+                                for tag, val in filter.items():
+                                    if tag in self.tags and self.tags[tag] != val:
+                                        raise XPostThrowaway()
                             return msg
                         except: pass
                         id -= 1
