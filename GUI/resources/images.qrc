@@ -6,5 +6,6 @@
     <file alias="edit">edit_pencil.png</file>
     <file alias="trash">trash_can.png</file>
     <file alias="settings">setting-cog-512.png</file>
+    <file alias="filter">filter.png</file>
   </qresource> 
 </RCC>
