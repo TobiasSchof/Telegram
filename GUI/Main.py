@@ -820,15 +820,15 @@ class Main(QMainWindow):
 
         # disable next/prev message and media buttons if necessary
         try:
-            self.scraper.prev()
-            self.scraper.next()
+            self.scraper.prev(filter=self.filter.get_filters())
+            self.scraper.next(filter=self.filter.get_filters())
             self.prev_msg_btn.setEnabled(True)
         except EndRange:
             self.prev_msg_btn.setEnabled(False)
 
         try:
-            self.scraper.next()
-            self.scraper.prev()
+            self.scraper.next(filter=self.filter.get_filters())
+            self.scraper.prev(filter=self.filter.get_filters())
             self.next_msg_btn.setEnabled(True)
         except EndRange:
             self.next_msg_btn.setEnabled(False)

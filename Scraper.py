@@ -191,7 +191,9 @@ class Scraper:
                         raise EndRange("Already at end of date range.")
                 else:
                     raise EndRange("Already at end of date range.")
-            except XPostThrowaway: next_id += 1
+            except XPostThrowaway:
+                print({tag:self.tags[tag] for tag in filter if tag in self.tags})
+                next_id += 1
         
     def prev(self, filter = None):
         """Returns the previous telegram in the date range
