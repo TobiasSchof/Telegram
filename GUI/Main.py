@@ -219,13 +219,14 @@ class Filter_window(QDialog):
         self.scroll_area = self.findChildren(QScrollArea)[0]
         self.scroll_area.setLayout(QVBoxLayout())
 
-        self.add_section_layout = QHBoxLayout()
+        self.add_section = QWidget()
+        self.add_section.set_layout(QHBoxLayout())
         self.add_section_tag = QComboBox()
         self.add_section_btn = QPushButton("add")
-        self.add_section_layout.addWidget(self.add_section_tag)
-        self.add_section_btn.addWidget(self.add_section_btn)
+        self.add_section.layout().addWidget(self.add_section_tag)
+        self.add_section.layout().addWidget(self.add_section_btn)
 
-        self.scroll_area.layout().addWidget(self.add_section_layout)
+        self.scroll_area.layout().addWidget(self.add_section.layout())
 
         # populate self
         self.set_tags()
