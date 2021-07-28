@@ -199,7 +199,7 @@ class Settings_window(QDialog):
 class Filter_window(QDialog):
     """A class to handle filters"""
 
-    def __init__(self, tags, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Constructor"""
 
         super().__init__(*args, **kwargs)
