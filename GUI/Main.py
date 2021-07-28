@@ -305,7 +305,9 @@ class Filter_window(QDialog):
     def get_filters(self):
         """Returns a dictionary with filter"""
 
-        return {tag:bool(widg.tag_val.getCurrentIndex()) for tag, widg in self.tag_widgs.itesm()}
+        if len(self.tag_widgs) > 0:
+            return {tag:bool(widg.tag_val.getCurrentIndex()) for tag, widg in self.tag_widgs.itesm()}
+        else: return None
 
 class Media_Player(QWidget):
     """A widget to create a media player
@@ -531,8 +533,10 @@ class Main(QMainWindow):
         self.next_media_btn.clicked.connect(lambda _: self.load_media(self.media_idx+1))
 
         # connect next and prev buttons for message
-        self.prev_msg_btn.clicked.connect(lambda _: (self.set_tags(), self.scraper.prev(), self.load_msg()))
-        self.next_msg_btn.clicked.connect(lambda _: (self.set_tags(), self.scraper.next(), self.load_msg()))
+        self.filter = Filter_window(main_window = self)
+
+        self.prev_msg_btn.clicked.connect(lambda _: (self.set_tags(), self.scraper.prev(filter = self.filter.get_filters()), self.load_msg()))
+        self.next_msg_btn.clicked.connect(lambda _: (self.set_tags(), self.scraper.next(filter = self.filter.get_filters()), self.load_msg()))
 
         self.prev_msg_btn.setEnabled(False)
         self.next_msg_btn.setEnabled(False)
@@ -630,8 +634,6 @@ class Main(QMainWindow):
         settings_act = QAction(QIcon(":icons/settings"), "Settings", self)
         settings_act.triggered.connect(self.open_settings)
         taggermenu.addAction(settings_act)
-
-        self.filter = Filter_window(main_window = self)
 
         filter_act = QAction(QIcon(":icons/filter"), "Filters", self)
         filter_act.triggered.connect(self.filter.exec_)
