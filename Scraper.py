@@ -409,14 +409,14 @@ class Scraper:
         if srch_msg.forward is None:
             self.fwd = None
         else:
-            fwd = srch_msg.forward.from_id.channel_id
             try:
+                fwd = srch_msg.forward.from_id.channel_id
                 fwd = "t.me/"+self.client.get_entity(fwd).username
                 if fwd.lower() in self.excl:
                     msg = "Crosspost from {}".format(fwd)
                     raise XPostThrowaway(msg)
                 self.fwd = fwd
-            except telethon.errors.rpcerrorlist.ChannelPrivateError:
+            except:
                 fwd = None
                 self.fwd = None
 
@@ -443,7 +443,9 @@ class Scraper:
         self.bot_id    = old_msg.via_bot_id
         self.views     = old_msg.views
         self.fwds      = old_msg.forwards
-        self.replies   = old_msg.replies
+        try:
+            self.replies   = old_msg.replies.replies
+        except: self.replies = 0
         self.edit_date = old_msg.edit_date
         self.msg_id    = old_msg.id
         self.msg_date  = old_msg.date

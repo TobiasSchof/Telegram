@@ -296,6 +296,7 @@ class Tag_Area(QWidget):
 
         # setup tag area
         self.add_tag_btn.clicked.connect(self.add)
+        self.chkboxs = []
         self.setup()
 
     def setup(self):
