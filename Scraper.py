@@ -160,7 +160,7 @@ class Scraper:
                 tags = []
                 # add tags
                 for tag, val in filter.items():
-                    cmd += " AND {} = ?".format(tag)
+                    cmd += " AND `{}` = ?".format(tag)
                     tags.append(val)
                 for excl_chnl in self.excl:
                     cmd += " AND NOT XPost = ?"
@@ -219,7 +219,7 @@ class Scraper:
                 tags = []
                 # add tags
                 for tag, val in filter.items():
-                    cmd += " AND {} = ?".format(tag)
+                    cmd += " AND `{}` = ?".format(tag)
                     tags.append(val)
                 for excl_chnl in self.excl:
                     cmd += " AND NOT XPost = ?"
