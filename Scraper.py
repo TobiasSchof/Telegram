@@ -192,7 +192,7 @@ class Scraper:
                 else:
                     raise EndRange("Already at end of date range.")
             except XPostThrowaway:
-                if self.tags is not None:
+                if self.tags is not None and filter is not None:
                     print({tag:self.tags[tag] for tag in filter if tag in self.tags})
                 next_id += 1
         

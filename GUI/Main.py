@@ -816,6 +816,7 @@ class Main(QMainWindow):
                 self.date.setText("---")
                 self.xpost.setText("---")
                 self.reply.setText("---")
+                self.load_media("clear")
                 return 
 
         # otherwise set original text to message text
@@ -865,7 +866,7 @@ class Main(QMainWindow):
         try: self.comment_box.setPlainText(self.scraper.comment)
         except: self.comment_box.setPlainText("")
 
-        self.load_media(0)
+        self.load_media(self.scraper.media[0])
 
     def load_media(self, idx):
         """Loads the media at the given idx from the scraper
