@@ -288,6 +288,7 @@ class Filter_window(QDialog):
 
         # if accepted, continue
         if ret:
+            self.main.load_msg()
             return ret
         # otherwise, reset widgets
         else:
