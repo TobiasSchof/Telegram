@@ -148,9 +148,29 @@ class Scraper:
         """Returns the next telegram in the date range
             (Will throw an error if this is the last telegram in the date range)
         """
-
-        if filter is not None and self.db is None:
-            raise ValueError("Filters can only be used with a database.")
+        
+        # do filter work
+        if filter is not None:
+            # if no database, we can't filter
+            if self.db is None:
+                raise ValueError("Filters can only be used with a database.")
+            # otherwise pull all posts in date range with given filters
+            else:
+                cmd = "SELECT ID FROM Scraper WHERE Channel = ? AND DT BETWEEN ? AND ? AND ID > ?"
+                tags = []
+                # add tags
+                for tag, val in filter.items():
+                    cmd += " AND {} = ?".format(tag)
+                    tags.append(val)
+                for excl_chnl in self.excl:
+                    cmd += " AND NOT XPost = ?"
+                # find possible messages in database
+                possibles = self.db.execute(cmd, (self.chnl.username, self.start.isoformat().replace("T", " "),
+                                self.end.isoformat().replace("T", " "), self.msg_id, *tags, *self.excl)).fetchall()
+                # check that there's at least one entry
+                if len(possibles) == 0:
+                    raise EndRange("No next message fulfilling filter, date range, and exclusions.")
+                else: return self.get_msg_by_id(possibles[0][0])
 
         # check if id should be incremented from message or media
         if len(self.media) > 0:
@@ -163,11 +183,6 @@ class Scraper:
         while True:
             try:
                 msg = self.get_msg_by_id(next_id, expand=False)
-                # check filter
-                if filter is not None:
-                    for tag, val in filter.items():
-                        if tag in self.tags and self.tags[tag] != val:
-                            raise XPostThrowaway()
                 return msg
             except EndRange as e:
                 # in this case, the message is missing. But it seems that sometimes,
@@ -178,15 +193,8 @@ class Scraper:
                     while id - next_id <= 30:
                         try:
                             msg = self.get_msg_by_id(next_id, expand=False)
-                            # check filter
-                            if filter is not None:
-                                for tag, val in filter.items():
-                                    if tag in self.tags and self.tags[tag] != val:
-                                        raise XPostThrowaway()
                             return msg
-                        except Exception as e:
-                            if type(e) is not XPostThrowaway: pass
-                            else: raise e
+                        except: pass
                         id += 1
 
                     if id - next_id > 15:
@@ -200,8 +208,28 @@ class Scraper:
             (Will throw an error if this is the first telegram in the date range)
         """
 
-        if filter is not None and self.db is None:
-            raise ValueError("Filters can only be used with a database.")
+        # do filter work
+        if filter is not None:
+            # if no database, we can't filter
+            if self.db is None:
+                raise ValueError("Filters can only be used with a database.")
+            # otherwise pull all posts in date range with given filters
+            else:
+                cmd = "SELECT ID FROM Scraper WHERE Channel = ? AND DT BETWEEN ? AND ? AND ID < ?"
+                tags = []
+                # add tags
+                for tag, val in filter.items():
+                    cmd += " AND {} = ?".format(tag)
+                    tags.append(val)
+                for excl_chnl in self.excl:
+                    cmd += " AND NOT XPost = ?"
+                # find possible messages in database
+                possibles = self.db.execute(cmd, (self.chnl.username, self.start.isoformat().replace("T", " "),
+                                self.end.isoformat().replace("T", " "), self.msg_id, *tags, *self.excl)).fetchall()
+                # check that there's at least one entry
+                if len(possibles) == 0:
+                    raise EndRange("No previous message fulfilling filter, date range, and exclusions.")
+                else: return self.get_msg_by_id(possibles[-1][0])
 
         prev_id = self.msg_id - 1
 
@@ -210,11 +238,6 @@ class Scraper:
         while True:
             try:
                 msg = self.get_msg_by_id(prev_id, expand=False)
-                # check filter
-                if filter is not None:
-                    for tag, val in filter.items():
-                        if tag in self.tags and self.tags[tag] != val:
-                            raise XPostThrowaway()
                 return msg
             except EndRange as e:
                 # in this case, the message is missing. But it seems that sometimes,
@@ -225,15 +248,8 @@ class Scraper:
                     while prev_id - id <= 30:
                         try:
                             msg = self.get_msg_by_id(prev_id, expand=False)
-                            # check filter
-                            if filter is not None:
-                                for tag, val in filter.items():
-                                    if tag in self.tags and self.tags[tag] != val:
-                                        raise XPostThrowaway()
                             return msg
-                        except Exception as e:
-                            if type(e) is not XPostThrowaway: pass
-                            else: raise e
+                        except: pass
                         id -= 1
 
                     if prev_id - id > 15:
