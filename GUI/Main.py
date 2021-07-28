@@ -4,6 +4,7 @@
 from datetime import datetime, timezone, timedelta
 from configparser import ConfigParser
 from glob import glob
+from functools import partial
 import sys, os, math
 
 # installs
@@ -211,7 +212,7 @@ class Filter_window(QDialog):
         self.main = main_window
 
         # hold filter tags
-        self.tags = {}
+        self.tags = []
         # hold tag widgets
         self.tag_widgs = {}
 
@@ -223,6 +224,7 @@ class Filter_window(QDialog):
         self.add_section.setLayout(QHBoxLayout())
         self.add_section_tag = QComboBox()
         self.add_section_btn = QPushButton("add")
+        self.add_section_btn.clicked.connect(self.add_tag)
         self.add_section.layout().addWidget(self.add_section_tag)
         self.add_section.layout().addWidget(self.add_section_btn)
         self.add_section.layout().setStretch(0, 5)
@@ -245,10 +247,11 @@ class Filter_window(QDialog):
             return
 
         # otherwise, delete the tags that need to be deleted
-        for nm, val in self.tags.items():
-            _ = self.tags.pop(nm)
-            widg = self.tag_widgs.pop(nm)
-            widg.setParent(None)
+        for nm in self.tags:
+            if nm not in self.main.scraper.tags:
+                self.tags.remove(nm)
+                widg = self.tag_widgs.pop(nm)
+                widg.setParent(None)
 
         self.add_section_tag.clear()
         for tag, val in self.main.scraper.tags.items():
@@ -257,8 +260,22 @@ class Filter_window(QDialog):
     def add_tag(self):
         """Method to add a tag"""
 
-        print("add")
+        tag = self.add_section_tag.currentText()
+        if tag not in self.tag_widgs:
+            self.tags.append(tag)
+            self.tag_widgs[tag] = QWidget()
+            uic.loadUi(os.path.join(resource_path, "filter_tag.ui"), self.tag_widgs[tag])
+            self.tag_widgs[tag].trash.clicked.connect(partial(self.remove_filter, tag))
+            self.scroll_area.layout().addWidget(self.tag_widgs[tag], 0)
 
+    def remove_filter(self, tag):
+        """Method to remove the filter on <tag>"""
+
+        if not tag in self.tag_widgs: return
+
+        self.tags.remove(tag)
+        widg = self.tag_widgs.pop(tag)
+        widg.setParent(None)
 
 class Media_Player(QWidget):
     """A widget to create a media player
