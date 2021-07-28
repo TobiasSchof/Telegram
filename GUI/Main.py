@@ -811,18 +811,22 @@ class Main(QMainWindow):
         filt = self.filter.get_filters()
         if filt is not None:
             if not all([self.scraper.tags[tag] == val for tag, val in filt.items() if tag in self.scraper.tags]):
-                self.orig_msg.setText("No messages for this channel in that date range with the given filters")
-                self.trans_msg.setText("No messages for this channel in that date range with the given filters")
-                self.msg_id.setText("")
-                self.prev_msg_btn.setEnabled(False)
-                self.next_msg_btn.setEnabled(False)
-                self.date.setText("---")
-                self.xpost.setText("---")
-                self.reply.setText("---")
-                self.load_media("clear")
-                self.tag_area.setup(clear = True)
-                self.comment_box.setPlainText("")
-                return 
+                try: self.scraper.next(filt)
+                except:
+                    try: self.scraper.prev(filt)
+                    except:
+                        self.orig_msg.setText("No messages for this channel in that date range with the given filters")
+                        self.trans_msg.setText("No messages for this channel in that date range with the given filters")
+                        self.msg_id.setText("")
+                        self.prev_msg_btn.setEnabled(False)
+                        self.next_msg_btn.setEnabled(False)
+                        self.date.setText("---")
+                        self.xpost.setText("---")
+                        self.reply.setText("---")
+                        self.load_media("clear")
+                        self.tag_area.setup(clear = True)
+                        self.comment_box.setPlainText("")
+                        return 
 
         # load tags
         self.tag_area.setup()
