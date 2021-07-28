@@ -224,8 +224,9 @@ class Filter_window(QDialog):
         self.add_section_tag = QComboBox()
         self.add_section_btn = QPushButton("add")
         self.add_section.layout().addWidget(self.add_section_tag)
-        self.add_section.layout().addSpacing(40)
         self.add_section.layout().addWidget(self.add_section_btn)
+        self.add_section.layout().setStretch(0, 5)
+        self.add_section.layout().setStretch(1, 1)
 
         self.scroll_area.layout().addWidget(self.add_section)
 
@@ -249,6 +250,9 @@ class Filter_window(QDialog):
             widg = self.tag_widgs.pop(nm)
             widg.setParent(None)
 
+        self.add_section_tag.clear()
+        for tag, val in self.main.scraper.tags.items():
+            self.add_section_tag.addItem(tag)
 
     def add_tag(self):
         """Method to add a tag"""
