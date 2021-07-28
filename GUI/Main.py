@@ -665,7 +665,7 @@ class Main(QMainWindow):
 
         ret = self.settings.exec_()
         # if settings weren't confirmed, close
-        if not ret: sys.exit()
+        #if not ret: sys.exit()
 
         ok = False
 
@@ -803,6 +803,20 @@ class Main(QMainWindow):
             self.xpost.setText("---")
             self.reply.setText("---")
             return
+
+        # clear messages if there's no valid message in filter
+        filt = self.filter.get_filters()
+        if filt is not None:
+            if not all([self.scraper.tags[tag] == val for tag, val in filt.items() if tag in self.scraper.tags]):
+                self.orig_msg.setText("No messages for this channel in that date range with the given filters")
+                self.trans_msg.setText("No messages for this channel in that date range with the given filters")
+                self.msg_id.setText("")
+                self.prev_msg_btn.setEnabled(False)
+                self.next_msg_btn.setEnabled(False)
+                self.date.setText("---")
+                self.xpost.setText("---")
+                self.reply.setText("---")
+                return 
 
         # otherwise set original text to message text
         self.orig_msg.setText(self.scraper.msg)
