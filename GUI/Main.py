@@ -199,18 +199,27 @@ class Settings_window(QDialog):
 class Filter_window(QDialog):
     """A class to handle filters"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, main_window, *args, **kwargs):
         """Constructor"""
 
         super().__init__(*args, **kwargs)
 
         # load ui
         uic.loadUi(os.path.join(resource_path, "Filter_window.ui"), self)
-         
-        self.tag_area.setWidgetResizable(True)
+        
+        # get hook to main widget so we can get scraper
+        self.main = main_window
 
         # hold filter tags
         self.tags = {}
+
+        # populate self
+        self.set_tags()
+
+    def set_tags(self):
+        """A method to setup the tag box"""
+
+        print("ok")
 
 class Media_Player(QWidget):
     """A widget to create a media player
@@ -536,7 +545,7 @@ class Main(QMainWindow):
         settings_act.triggered.connect(self.open_settings)
         taggermenu.addAction(settings_act)
 
-        self.filter = Filter_window()
+        self.filter = Filter_window(main_window = self)
 
         filter_act = QAction(QIcon(":icons/filter"), "Filters", self)
         filter_act.triggered.connect(self.open_filter)
@@ -564,6 +573,8 @@ class Main(QMainWindow):
 
     def open_filter(self):
         """Method to open the window to change filters"""
+
+        self.filter.set_tags()
 
         self.filter.exec_()
 
