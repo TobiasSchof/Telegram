@@ -15,13 +15,13 @@
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="0,0">
    <item row="0" column="0" colspan="2">
-    <widget class="QGroupBox" name="x_post_grp">
+    <widget class="QGroupBox" name="tag_grp">
      <property name="title">
       <string>Tags</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QScrollArea" name="x_posts_area">
+       <widget class="QScrollArea" name="tag_area">
         <property name="minimumSize">
          <size>
           <width>0</width>
