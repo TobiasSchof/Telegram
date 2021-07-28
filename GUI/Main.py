@@ -45,7 +45,7 @@ class Settings_window(QDialog):
         super().__init__(*args, **kwargs)
 
         # load ui
-        uic.loadUi(os.path.join(resource_path, "Settings_window.ui"), self)
+        uic.loadui(os.path.join(resource_path, "settings_window.ui"), self)
 
         self.x_posts_area.setWidgetResizable(True)
         # turn off scroll bar on horizontal
@@ -195,6 +195,22 @@ class Settings_window(QDialog):
         if(evt.key() == Qt.Key_Enter or evt.key() == Qt.Key_Return): return
         # otherwise, behave normally
         super().keyPressEvent(evt)
+
+class Filter_window(QDialog):
+    """A class to handle filters"""
+
+    def __init__(self, tags, *args, **kwargs):
+        """Constructor"""
+
+        super().__init__(*args, **kwargs)
+
+        # load ui
+        uic.loadui(os.path.join(resource_path, "filter_window.ui"), self)
+         
+        self.tag_area.setWidgetResizable(True)
+
+        # hold filter tags
+        self.tags = {}
 
 class Media_Player(QWidget):
     """A widget to create a media player
@@ -519,6 +535,12 @@ class Main(QMainWindow):
         settings_act.triggered.connect(self.open_settings)
         taggermenu.addAction(settings_act)
 
+        self.filter = Filter_window()
+
+        filter_act = QAction(QIcon(":icons/filter"), "Filters", self)
+        filter_act.triggered.connect(self.open_filter)
+        taggermenu.addAction(filter_act)
+
         # show GUI
         self.show()
 
@@ -538,6 +560,11 @@ class Main(QMainWindow):
             # placeholder is tiny for some reason at start so we load
             #   media after showing window to scale correctly
             self.load_media(0)
+
+    def open_filter(self):
+        """Method to open the window to change filters"""
+
+        self.filter.exec_()
 
     def open_settings(self):
         """Open the settings window and change the scraper if necessary"""
