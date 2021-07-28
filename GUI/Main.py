@@ -878,7 +878,7 @@ class Main(QMainWindow):
         try: self.comment_box.setPlainText(self.scraper.comment)
         except: self.comment_box.setPlainText("")
 
-        self.load_media(self.scraper.media[0])
+        self.load_media(self.scraper.media[0] if self.scraper.media is not None and len(self.scraper.media) > 0 else 0)
 
     def load_media(self, idx):
         """Loads the media at the given idx from the scraper
