@@ -265,8 +265,9 @@ class Filter_window(QDialog):
             self.tags.append(tag)
             self.tag_widgs[tag] = QWidget()
             uic.loadUi(os.path.join(resource_path, "filter_tag.ui"), self.tag_widgs[tag])
+            self.tag_widgs[tag].tag_str.setText(tag)
             self.tag_widgs[tag].trash.clicked.connect(partial(self.remove_filter, tag))
-            self.scroll_area.layout().addWidget(self.tag_widgs[tag], 0)
+            self.scroll_area.layout().insertWidget(self.tag_widgs[tag], 0)
 
     def remove_filter(self, tag):
         """Method to remove the filter on <tag>"""
