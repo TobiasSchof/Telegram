@@ -804,6 +804,7 @@ class Main(QMainWindow):
             self.reply.setText("---")
             self.load_media("clear")
             self.tag_area.setup(clear = True)
+            self.comment_box.setPlainText("")
             return
 
         # clear messages if there's no valid message in filter
@@ -820,6 +821,7 @@ class Main(QMainWindow):
                 self.reply.setText("---")
                 self.load_media("clear")
                 self.tag_area.setup(clear = True)
+                self.comment_box.setPlainText("")
                 return 
 
         # load tags
