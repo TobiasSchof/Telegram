@@ -242,17 +242,15 @@ class Filter_window(QDialog):
 
         # if there's no scraper, erase the filter
         if self.main.scraper is None:
-            self.tags = {}
             for nm, widg in self.tag_widgs.items():
                 widg.setParent(None)
             self.tag_widgs = {}
             return
 
         # otherwise, delete the tags that need to be deleted
-        for nm in self.tags:
+        for nm, widg in self.tag_widgs.items():
             if nm not in self.main.scraper.tags:
-                self.tags.remove(nm)
-                widg = self.tag_widgs.pop(nm)
+                _ = self.tag_widgs.pop(nm)
                 widg.setParent(None)
 
         self.add_section_tag.clear()
@@ -264,7 +262,6 @@ class Filter_window(QDialog):
 
         tag = self.add_section_tag.currentText()
         if tag not in self.tag_widgs:
-            self.tags.append(tag)
             self.tag_widgs[tag] = QWidget()
             uic.loadUi(os.path.join(resource_path, "filter_tag.ui"), self.tag_widgs[tag])
             self.tag_widgs[tag].tag_str.setText(tag)
@@ -276,9 +273,34 @@ class Filter_window(QDialog):
 
         if not tag in self.tag_widgs: return
 
-        self.tags.remove(tag)
         widg = self.tag_widgs.pop(tag)
         widg.setParent(None)
+
+    def exec_(self, *args):
+        """Catch execute to copy tags, widgets and then revert/keep changes
+            depending on cancel/ok button"""
+
+        self.parse_tags()
+
+        tags = {nm : widg.tag_val.currentIndex() for nm, widg in self.tag_widgs.items()}
+
+        ret = super().exec_(*args)
+
+        # if accepted, continue
+        if ret:
+            return ret
+        # otherwise, reset widgets
+        else:
+            for tag, widg in self.tag_widgs.items():
+                _ = self.tag_widgs.pop(tag)
+                widg.setParent(None)
+            for tag, val in tags.items():
+                self.tag_widgs[tag] = QWidget()
+                uic.loadUi(os.path.join(resource_path, "filter_tag.ui"), self.tag_widgs[tag])
+                self.tag_widgs[tag].tag_str.setText(tag)
+                self.tag_widgs[tag].tag_val.setCurrentIndex(val)
+                self.tag_widgs[tag].trash.clicked.connect(partial(self.remove_filter, tag))
+                self.filters.layout().insertWidget(0, self.tag_widgs[tag]) 
 
 class Media_Player(QWidget):
     """A widget to create a media player
@@ -632,8 +654,6 @@ class Main(QMainWindow):
 
     def open_filter(self):
         """Method to open the window to change filters"""
-
-        self.filter.parse_tags()
 
         self.filter.exec_()
 
