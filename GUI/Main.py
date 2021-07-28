@@ -636,7 +636,7 @@ class Main(QMainWindow):
         taggermenu.addAction(settings_act)
 
         filter_act = QAction(QIcon(":icons/filter"), "Filters", self)
-        filter_act.triggered.connect(self.filter.exec_)
+        filter_act.triggered.connect(lambda _ : self.filter.exec_())
         taggermenu.addAction(filter_act)
 
         # show GUI
