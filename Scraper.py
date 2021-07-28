@@ -184,7 +184,9 @@ class Scraper:
                                     if tag in self.tags and self.tags[tag] != val:
                                         raise XPostThrowaway()
                             return msg
-                        except: pass
+                        except Exception as e:
+                            if type(e) is not XPostThrowaway: pass
+                            else: raise e
                         id += 1
 
                     if id - next_id > 15:
@@ -229,7 +231,9 @@ class Scraper:
                                     if tag in self.tags and self.tags[tag] != val:
                                         raise XPostThrowaway()
                             return msg
-                        except: pass
+                        except Exception as e:
+                            if type(e) is not XPostThrowaway: pass
+                            else: raise e
                         id -= 1
 
                     if prev_id - id > 15:
