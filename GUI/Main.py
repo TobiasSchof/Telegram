@@ -413,7 +413,7 @@ class Tag_Area(QWidget):
         self.chkboxs = []
         self.setup()
 
-    def setup(self):
+    def setup(self, clear = False):
         """A method to setup the tag area with the current scraper's tags"""
 
         if self.main.scraper is None:
@@ -438,31 +438,32 @@ class Tag_Area(QWidget):
         for tg in self.chkboxs:
             tg.setParent(None)
 
-        self.chkboxs = []
-        # iterate through tags, adding them to layout
-        for tag in self.main.scraper.tags:
-            # make checkbox with correct status
-            self.chkboxs.append(QCheckBox(tag))
-            self.chkboxs[-1].setChecked(self.main.scraper.tags[tag])
-            #self.chkboxs[-1].toggled.connect(lambda : print("yay bandaids?"))
-            # figure out how many column units this tag should take up (factoring in spacing)
-            col_span = max(1, math.ceil((self.chkboxs[-1].sizeHint().width()) / col_u))
-            if col_span > 2:
-                # check if with spacing, we fit in one fewer column
-                if self.chkboxs[-1].sizeHint().width() <= ((col_span - 1) * col_u + (col_span - 2) * 10):
-                    col_span -= 1
-            # decide if column span should push this tag to a new row
-            if col_span + column > 5 and column != 0:
-                column = 0
-                row += 1
-            # add tag
-            new_layout.addWidget(self.chkboxs[-1], row, column, 1, col_span)
-            # calculate row/column start for next tag
-            column = (min(column + col_span, 5)) % 5
-            row = row + 1 if column == 0 else row
+        if not clear:
+            self.chkboxs = []
+            # iterate through tags, adding them to layout
+            for tag in self.main.scraper.tags:
+                # make checkbox with correct status
+                self.chkboxs.append(QCheckBox(tag))
+                self.chkboxs[-1].setChecked(self.main.scraper.tags[tag])
+                #self.chkboxs[-1].toggled.connect(lambda : print("yay bandaids?"))
+                # figure out how many column units this tag should take up (factoring in spacing)
+                col_span = max(1, math.ceil((self.chkboxs[-1].sizeHint().width()) / col_u))
+                if col_span > 2:
+                    # check if with spacing, we fit in one fewer column
+                    if self.chkboxs[-1].sizeHint().width() <= ((col_span - 1) * col_u + (col_span - 2) * 10):
+                        col_span -= 1
+                # decide if column span should push this tag to a new row
+                if col_span + column > 5 and column != 0:
+                    column = 0
+                    row += 1
+                # add tag
+                new_layout.addWidget(self.chkboxs[-1], row, column, 1, col_span)
+                # calculate row/column start for next tag
+                column = (min(column + col_span, 5)) % 5
+                row = row + 1 if column == 0 else row
 
-        # add add button
-        new_layout.addWidget(self.add_tag_btn, row, column)
+            # add add button
+            new_layout.addWidget(self.add_tag_btn, row, column)
 
         # set old layout to temporary widget to re-parent it
         QWidget().setLayout(self.layout())
@@ -789,9 +790,6 @@ class Main(QMainWindow):
         """Loads the message currently held by
             the scraper"""
 
-        # load tags
-        self.tag_area.setup()
-
         # clear messages if there's no valid scraper
         if self.scraper is None:
             self.orig_msg.setText("No messages for this channel in that date range")
@@ -817,7 +815,11 @@ class Main(QMainWindow):
                 self.xpost.setText("---")
                 self.reply.setText("---")
                 self.load_media("clear")
+                self.tag_area.setup(clear = True)
                 return 
+
+        # load tags
+        self.tag_area.setup()
 
         # otherwise set original text to message text
         self.orig_msg.setText(self.scraper.msg)
@@ -883,6 +885,7 @@ class Main(QMainWindow):
             if self.unscaled_img is None or self.media_idx != idx:
                 try:
                     self.media_f = self.scraper.get_media(self.scraper.media[idx%len(self.scraper.media)]) 
+                    assert idx != "clear"
                 except (IndexError, AttributeError, ZeroDivisionError):
                     self.media_f = ":/placeholder/no_img.jpg"
 
@@ -915,7 +918,6 @@ class Main(QMainWindow):
                         _ = QMovie(self.media_f)
                         _.jumpToFrame(0)
                         self.unscaled_img = _.currentImage()
-
             # video player will resize and scale itself correctly so we only have
             #   to worry about size if in "label" mode
             if self.media_type == "label":
@@ -937,7 +939,7 @@ class Main(QMainWindow):
             self.media_idx = idx
 
             # disable buttons
-            if self.scraper is None or len(self.scraper.media) <= 1:
+            if idx == "clear" or self.scraper is None or len(self.scraper.media) <= 1:
                 self.prev_media_btn.setEnabled(False)
                 self.next_media_btn.setEnabled(False)
             else:
@@ -947,6 +949,7 @@ class Main(QMainWindow):
             # set media id
             try:
                 self.media_id.setText("{}".format(self.scraper.media[idx%len(self.scraper.media)]))
+                assert idx != "clear"
             except:
                 self.media_id.setText("---")
         except: pass
