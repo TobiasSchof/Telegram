@@ -170,7 +170,7 @@ class Scraper:
                 # check that there's at least one entry
                 if len(possibles) == 0:
                     raise EndRange("No next message fulfilling filter, date range, and exclusions.")
-                else: return self.get_msg_by_id(possibles[0][0])
+                else: return self.get_msg_by_id(possibles[0][0], expand = False)
 
         # check if id should be incremented from message or media
         if len(self.media) > 0:
@@ -229,7 +229,7 @@ class Scraper:
                 # check that there's at least one entry
                 if len(possibles) == 0:
                     raise EndRange("No previous message fulfilling filter, date range, and exclusions.")
-                else: return self.get_msg_by_id(possibles[-1][0])
+                else: return self.get_msg_by_id(possibles[-1][0], expand = False)
 
         prev_id = self.msg_id - 1
 
