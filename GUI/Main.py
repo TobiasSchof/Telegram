@@ -205,7 +205,7 @@ class Filter_window(QDialog):
         super().__init__(*args, **kwargs)
 
         # load ui
-        uic.loadUi(os.path.join(resource_path, "filter_window.ui"), self)
+        uic.loadUi(os.path.join(resource_path, "Filter_window.ui"), self)
          
         self.tag_area.setWidgetResizable(True)
 
