@@ -888,7 +888,7 @@ class Main(QMainWindow):
                 try:
                     self.media_f = self.scraper.get_media(self.scraper.media[idx%len(self.scraper.media)]) 
                     assert idx != "clear"
-                except (IndexError, AttributeError, ZeroDivisionError):
+                except (IndexError, AttributeError, ZeroDivisionError, AssertionError):
                     self.media_f = ":/placeholder/no_img.jpg"
 
                 if self.media_f.endswith((".jpg", ".png", ".gif")):
@@ -950,8 +950,8 @@ class Main(QMainWindow):
 
             # set media id
             try:
-                self.media_id.setText("{}".format(self.scraper.media[idx%len(self.scraper.media)]))
                 assert idx != "clear"
+                self.media_id.setText("{}".format(self.scraper.media[idx%len(self.scraper.media)]))
             except:
                 self.media_id.setText("---")
         except: pass
