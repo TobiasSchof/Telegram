@@ -216,7 +216,7 @@ class Filter_window(QDialog):
         self.tag_widgs = {}
 
         # set up scroll area
-        self.scroll_area = self.findChild(QScrollArea, "tag_area")
+        self.scroll_area = self.findChildren(QScrollArea)[0]
         self.scroll_area.setLayout(QVBoxLayout())
 
         self.add_section_layout = QHBoxLayout()
