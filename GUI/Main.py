@@ -218,7 +218,9 @@ class Filter_window(QDialog):
 
         # set up scroll area
         self.scroll_area = self.findChildren(QScrollArea)[0]
-        self.scroll_area.setLayout(QVBoxLayout())
+        self.filters = QGroupBox()
+        self.scroll_area.setWidget(self.filters)
+        self.filters.setLayout(QVBoxLayout())
 
         self.add_section = QWidget()
         self.add_section.setLayout(QHBoxLayout())
@@ -230,7 +232,7 @@ class Filter_window(QDialog):
         self.add_section.layout().setStretch(0, 5)
         self.add_section.layout().setStretch(1, 1)
 
-        self.scroll_area.layout().addWidget(self.add_section)
+        self.filters.layout().addWidget(self.add_section)
 
         # populate self
         self.parse_tags()
@@ -267,7 +269,7 @@ class Filter_window(QDialog):
             uic.loadUi(os.path.join(resource_path, "filter_tag.ui"), self.tag_widgs[tag])
             self.tag_widgs[tag].tag_str.setText(tag)
             self.tag_widgs[tag].trash.clicked.connect(partial(self.remove_filter, tag))
-            self.scroll_area.layout().insertWidget(self.tag_widgs[tag], 0)
+            self.filters.layout().insertWidget(0, self.tag_widgs[tag])
 
     def remove_filter(self, tag):
         """Method to remove the filter on <tag>"""
