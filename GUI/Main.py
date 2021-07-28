@@ -306,7 +306,7 @@ class Filter_window(QDialog):
         """Returns a dictionary with filter"""
 
         if len(self.tag_widgs) > 0:
-            return {tag:bool(widg.tag_val.getCurrentIndex()) for tag, widg in self.tag_widgs.itesm()}
+            return {tag:bool(widg.tag_val.getCurrentIndex()) for tag, widg in self.tag_widgs.items()}
         else: return None
 
 class Media_Player(QWidget):
