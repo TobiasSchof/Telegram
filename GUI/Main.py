@@ -220,16 +220,16 @@ class Filter_window(QDialog):
         self.scroll_area.setLayout(QVBoxLayout())
 
         self.add_section = QWidget()
-        self.add_section.set_layout(QHBoxLayout())
+        self.add_section.setLayout(QHBoxLayout())
         self.add_section_tag = QComboBox()
         self.add_section_btn = QPushButton("add")
         self.add_section.layout().addWidget(self.add_section_tag)
         self.add_section.layout().addWidget(self.add_section_btn)
 
-        self.scroll_area.layout().addWidget(self.add_section.layout())
+        self.scroll_area.layout().addWidget(self.add_section)
 
         # populate self
-        self.set_tags()
+        self.parse_tags()
 
     def parse_tags(self):
         """A method to setup the tag box"""
@@ -608,7 +608,7 @@ class Main(QMainWindow):
     def open_filter(self):
         """Method to open the window to change filters"""
 
-        self.filter.set_tags()
+        self.filter.parse_tags()
 
         self.filter.exec_()
 
