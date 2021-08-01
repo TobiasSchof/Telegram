@@ -43,7 +43,7 @@ def plot():
     fig, ax = plt.subplots()
 
     # add title
-    plt.setTitle("Posts referencing the elderly compared to posts referencing WWII")
+    plt.title("Posts referencing the elderly compared to posts referencing WWII")
     # plot data
     plt.plot(days, set_1_cnts, label = "Elderly")
     plt.plot(days, set_2_cnts, label = "WWII")
