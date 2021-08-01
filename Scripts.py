@@ -42,14 +42,14 @@ def plot():
     # make subfigure to have more control over axes
     fig, ax = plt.subplots()
 
+    # add title
+    plt.setTitle("Posts referencing the elderly compared to posts referencing WWII")
     # plot data
     plt.plot(days, set_1_cnts, label = "Elderly")
     plt.plot(days, set_2_cnts, label = "WWII")
 
     # format dates
-    ax.axis.set_major_formatter(DateFormatter("%m-%d"))
-    # rotate dates
-    plt.xticks(rotation=45)
+    ax.xaxis.set_major_formatter(DateFormatter("%m-%d"))
 
     # add axis labels
     plt.ylabel("Counts of posts per day")
