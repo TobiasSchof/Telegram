@@ -23,32 +23,27 @@ def plot():
         set_1 = db.execute("SELECT * FROM Scraper WHERE (`CHANNEL` = 'nexta_tv' OR `CHANNEL` = 'nexta_live') AND NOT (`XPost` = 't.me/nexta_tv' OR `XPost` = 't.me/nexta_live' OR `XPost` = 't.me/luxta_tv') AND (`1.3 Elderly` = 1 OR `3.3.1 Traditional Base` = 1)").fetchall()
         set_2 = db.execute("SELECT * FROM Scraper WHERE (`CHANNEL` = 'nexta_tv' OR `CHANNEL` = 'nexta_live') AND NOT (`XPost` = 't.me/nexta_tv' OR `XPost` = 't.me/nexta_live' OR `XPost` = 't.me/luxta_tv') AND (`13. WWII` = 1)").fetchall()
 
-    # get days for all the messages pulled
+    # get what days posts were on
     set_1_days = [post[4][:10] for post in set_1]
     set_2_days = [post[4][:10] for post in set_2]
 
-    # get unique days
-    set_1_days_u = []
-    for date in set_1_days:
-        if date not in set_1_days_u: set_1_days_u.append(datetime.fromisoformat(date))
-    set_2_days_u = []
-    for date in set_2_days:
-        if date not in set_2_days_u: set_2_days_u.append(datetime.fromisoformat(date))
-
-    # sort days
-    set_1_days_u.sort()
-    set_2_days_u.sort()
+    # get days for all the messages pulled
+    start = datetime(year = 2020, month = 8, day = 1)
+    end = datetime(year = 2020, month = 12, day = 1)
+    days = [start]
+    while days[-1] + timedelta(days = 1) < end:
+        days.append(days[-1] + timedelta(days = 1))
 
     # get number of posts per day
-    set_1_cnts = [set_1_days.count(date.isoformat()[:10]) for date in set_1_days_u]
-    set_2_cnts = [set_2_days.count(date.isoformat()[:10]) for date in set_2_days_u]
+    set_1_cnts = [set_1_days.count(date.isoformat()[:10]) for date in days]
+    set_2_cnts = [set_2_days.count(date.isoformat()[:10]) for date in days]
 
     # get figure, axis so we can modify appearance
     #fig, ax = plt.subplots()
 
     # plot data
-    plt.plot(set_1_days_u, set_1_cnts)
-    plt.plot(set_2_days_u, set_2_cnts)
+    plt.plot(days, set_1_cnts)
+    plt.plot(days, set_2_cnts)
 
     """
     # get x tick labels (every 14 days)
