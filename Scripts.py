@@ -59,9 +59,12 @@ def plot():
 
     # change ticks to YYYY-MM-DD
     ticks = [date.isoformat()[:10] for date in ticks]
+    ax.set_xticks(ticks)
 
     # plot figure
     fig.show()
+
+    return fig, ax
 
 def avg_win(chnl, start_id, end_id, type_):
     """Return mean, median, and std of views in id range for channel
