@@ -40,8 +40,8 @@ def plot():
     set_2_days_u.sort()
 
     # get number of posts per day
-    set_1_cnts = [set_1_days.count(date) for date in set_1_days_u]
-    set_2_cnts = [set_2_days.count(date) for date in set_2_days_u]
+    set_1_cnts = [set_1_days.count(date.isoformat()[:10]) for date in set_1_days_u]
+    set_2_cnts = [set_2_days.count(date.isoformat()[:10]) for date in set_2_days_u]
 
     # get figure, axis so we can modify appearance
     fig, ax = plt.subplots()
