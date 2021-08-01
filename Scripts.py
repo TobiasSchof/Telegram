@@ -5,6 +5,7 @@ import os, sys
 import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
 
 working_dir = os.path.join(os.path.expanduser("~"), "Documents", "Thesis")
 
@@ -38,10 +39,15 @@ def plot():
     set_1_cnts = [set_1_days.count(date.isoformat()[:10]) for date in days]
     set_2_cnts = [set_2_days.count(date.isoformat()[:10]) for date in days]
 
+    # make subfigure to have more control over axes
+    fig, ax = plt.subplots()
+
     # plot data
     plt.plot(days, set_1_cnts, label = "Elderly")
     plt.plot(days, set_2_cnts, label = "WWII")
 
+    # format dates
+    ax.axis.set_major_formatter(DateFormatter("%m-%d"))
     # rotate dates
     plt.xticks(rotation=45)
 
