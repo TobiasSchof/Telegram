@@ -63,6 +63,7 @@ def plot():
 
     # plot figure
     fig.show()
+    plt.show(block=False)
 
     return fig, ax
 
