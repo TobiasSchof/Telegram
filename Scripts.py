@@ -30,10 +30,10 @@ def plot():
     # get unique days
     set_1_days_u = []
     for date in set_1_days:
-        if date not in set_1_days_u: set_1_days_u.append(date)
+        if date not in set_1_days_u: set_1_days_u.append(datetime.fromisoformat(date))
     set_2_days_u = []
     for date in set_2_days:
-        if date not in set_2_days_u: set_2_days_u.append(date)
+        if date not in set_2_days_u: set_2_days_u.append(datetime.fromisoformat(date))
 
     # sort days
     set_1_days_u.sort()
@@ -50,6 +50,7 @@ def plot():
     ax.plot(set_1_days_u, set_1_cnts)
     ax.plot(set_2_days_u, set_2_cnts)
 
+    """
     # get x tick labels (every 14 days)
     start = datetime(year = 2020, month = 8, day = 1)
     end = datetime(year = 2020, month = 12, day = 1)
@@ -60,10 +61,10 @@ def plot():
     # change ticks to YYYY-MM-DD
     ticks = [date.isoformat()[:10] for date in ticks]
     ax.set_xticks(ticks)
+    """
 
     # plot figure
     fig.show()
-    plt.show(block=False)
 
     return fig, ax
 
