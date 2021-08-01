@@ -44,11 +44,11 @@ def plot():
     set_2_cnts = [set_2_days.count(date.isoformat()[:10]) for date in set_2_days_u]
 
     # get figure, axis so we can modify appearance
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
 
     # plot data
-    ax.plot(set_1_days_u, set_1_cnts)
-    ax.plot(set_2_days_u, set_2_cnts)
+    plt.plot(set_1_days_u, set_1_cnts)
+    plt.plot(set_2_days_u, set_2_cnts)
 
     """
     # get x tick labels (every 14 days)
@@ -60,13 +60,10 @@ def plot():
 
     # change ticks to YYYY-MM-DD
     ticks = [date.isoformat()[:10] for date in ticks]
-    ax.set_xticks(ticks)
+    plt.xticks(ticks)
     """
-
     # plot figure
-    fig.show()
-
-    return fig, ax
+    plt.show()
 
 def avg_win(chnl, start_id, end_id, type_):
     """Return mean, median, and std of views in id range for channel
