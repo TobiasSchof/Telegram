@@ -38,25 +38,20 @@ def plot():
     set_1_cnts = [set_1_days.count(date.isoformat()[:10]) for date in days]
     set_2_cnts = [set_2_days.count(date.isoformat()[:10]) for date in days]
 
-    # get figure, axis so we can modify appearance
-    #fig, ax = plt.subplots()
-
     # plot data
-    plt.plot(days, set_1_cnts)
-    plt.plot(days, set_2_cnts)
+    plt.plot(days, set_1_cnts, label = "Elderly")
+    plt.plot(days, set_2_cnts, label = "WWII")
 
-    """
-    # get x tick labels (every 14 days)
-    start = datetime(year = 2020, month = 8, day = 1)
-    end = datetime(year = 2020, month = 12, day = 1)
-    ticks = [start]
-    while ticks[-1] + timedelta(days = 14) < end:
-        ticks.append(ticks[-1] + timedelta(days = 14))
+    # rotate dates
+    plt.xticks(rotation=45)
 
-    # change ticks to YYYY-MM-DD
-    ticks = [date.isoformat()[:10] for date in ticks]
-    plt.xticks(ticks)
-    """
+    # add axis labels
+    plt.ylabel("Counts of posts per day")
+    plt.xlabel("Date (UTC)")
+
+    # add legend
+    plt.legend()
+
     # plot figure
     plt.show()
 
